@@ -17,7 +17,8 @@ def atualizar_pontos_ao_salvar_partida(sender, instance, **kwargs):
         
         for palpite in palpites_dessa_partida:
             palpite.calcular_pontuacao() # Chama aquela função do models.py
-            print(f"Palpite de {palpite.usuario}: {palpite.pontos_ganhos} pontos.")
+            #print(f"Palpite de {palpite.usuario}: {palpite.pontos_ganhos} pontos.")
+            print(f"Palpite de {palpite.usuario}: {palpite.pontos} pontos.")
 
 
 @receiver(post_save, sender=PerguntaExtra)

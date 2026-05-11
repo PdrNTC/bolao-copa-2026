@@ -1,5 +1,6 @@
 from .models import Partida, Palpite, Time, PalpitePodium
 from django.db.models import Q
+from bolao.models import Time, Partida
 
 # ==============================================================================
 # 1. LÓGICA DE CLASSIFICAÇÃO (GRUPOS)
@@ -161,3 +162,48 @@ def calcular_pontos_podium_geral():
     # (Mantém a lógica que você já tinha aqui, está correta)
     # ... código do calcular_pontos_podium_geral ...
     pass # Cole o código que você já tinha aqui se quiser, ou use o do utils abaixo
+
+
+# ==============================================================================
+# 4. LÓGICA DE PONTUAÇÃO
+# ==============================================================================
+
+def calcular_classificacao_grupo_real(letra_grupo):
+    """
+    Calcula a tabela de classificação real de um grupo 
+    baseada nos resultados (gols) oficiais cadastrados no Admin.
+    """
+    times = Time.objects.filter(grupo=letra_grupo)
+    tabela = []
+    
+    for time in times:
+        pontos = 0
+        saldo_gols = 0
+        gols_pro = 0
+        
+        # Partidas como Mandante (Casa) que já têm resultado
+        jogos_casa = Partida.objects.filter(time_casa=time, fase='GRUPOS', gols_casa__isnull=False)
+        for j in jogos_casa:
+            saldo_gols += (j.gols_casa - j.gols_visitante)
+            gols_pro += j.gols_casa
+            if j.gols_casa > j.gols_visitante: pontos += 3
+            elif j.gols_casa == j.gols_visitante: pontos += 1
+            
+        # Partidas como Visitante que já têm resultado
+        jogos_vis = Partida.objects.filter(time_visitante=time, fase='GRUPOS', gols_visitante__isnull=False)
+        for j in jogos_vis:
+            saldo_gols += (j.gols_visitante - j.gols_casa)
+            gols_pro += j.gols_visitante
+            if j.gols_visitante > j.gols_casa: pontos += 3
+            elif j.gols_visitante == j.gols_casa: pontos += 1
+            
+        tabela.append({
+            'time': time,
+            'pontos': pontos,
+            'saldo_gols': saldo_gols,
+            'gols_pro': gols_pro
+        })
+    
+    # Ordena a tabela por Pontos > Saldo de Gols > Gols Pró
+    tabela.sort(key=lambda x: (x['pontos'], x['saldo_gols'], x['gols_pro']), reverse=True)
+    return tabela
