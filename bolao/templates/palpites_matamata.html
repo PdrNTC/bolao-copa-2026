@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Palpites Mata-Mata</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f0f2f5; }
+        .card-jogo { border: none; border-radius: 15px; overflow: hidden; }
+        .card-header-custom { background-color: #343a40; color: white; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+        .time-box { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 35%; text-align: center; }
+        .time-nome { font-weight: 700; font-size: 1.1rem; margin-top: 5px; }
+        .img-bandeira { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #eee; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .input-placar { width: 60px; height: 50px; text-align: center; font-size: 1.5rem; font-weight: bold; border: 2px solid #dee2e6; border-radius: 10px; }
+        .input-placar:focus { border-color: #0d6efd; box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25); }
+        .x-separator { font-weight: bold; font-size: 1.5rem; color: #adb5bd; margin: 0 10px; }
+        .fase-badge { position: absolute; top: 10px; right: 10px; }
+    </style>
+  </head>
+  <body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-5">
+      <div class="container">
+        <a class="navbar-brand fw-bold" href="#">🏆 Bolão 2026</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <div class="navbar-nav me-auto">
+                <a class="nav-link" href="{% url 'ranking' %}">Ranking</a>
+                <a class="nav-link" href="{% url 'palpites' %}">Fase de Grupos</a>
+                <a class="nav-link active" href="#">Mata-Mata</a>
+                <a class="nav-link" href="{% url 'palpites_extras' %}">Bônus</a>
+            </div>
+            <span class="navbar-text text-white">Olá, <strong>{{ user.username }}</strong></span>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container mb-5">
+      <div class="text-center mb-5">
+        <h2 class="fw-bold">⚔️ Confrontos Mata-Mata</h2>
+        <p class="text-muted">O sistema preenche os times automaticamente conforme seus palpites anteriores!</p>
+      </div>
+      
+      {% if not lista_jogos %}
+        <div class="alert alert-info text-center">
+            Nenhum jogo de mata-mata cadastrado pelo Admin ainda.
+        </div>
+      {% endif %}
+
+      <form method="POST">
+        {% csrf_token %}
+        
+        <div class="row justify-content-center">
+            {% for jogo in lista_jogos %}
+            <div class="col-lg-8 mb-4">
+                <div class="card card-jogo shadow-sm">
+                    <div class="card-header card-header-custom d-flex justify-content-between align-items-center px-4 py-2">
+                        <span>{{ jogo.partida.get_fase_display }}</span>
+                        <small>{{ jogo.partida.data_jogo|date:"d/m/Y H:i" }}</small>
+                    </div>
+                    
+                    <div class="card-body py-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            
+                            <div class="time-box">
+                                {% if jogo.time_casa_visual.imagem %}
+                                    <img src="{{ jogo.time_casa_visual.imagem }}" class="img-bandeira mb-2">
+                                {% else %}
+                                    <div class="img-bandeira d-flex align-items-center justify-content-center bg-light text-muted">?</div>
+                                {% endif %}
+                                <div class="time-nome">{{ jogo.time_casa_visual.nome }}</div>
+                            </div>
+
+                            <div class="d-flex align-items-center">
+                                <input type="number" class="form-control input-placar" 
+                                       name="gols_casa_{{ jogo.partida.id }}" 
+                                       value="{{ jogo.palpite_casa }}" 
+                                       min="0">
+                                
+                                <span class="x-separator">✕</span>
+                                
+                                <input type="number" class="form-control input-placar" 
+                                       name="gols_vis_{{ jogo.partida.id }}" 
+                                       value="{{ jogo.palpite_vis }}" 
+                                       min="0">
+                            </div>
+
+                            <div class="time-box">
+                                {% if jogo.time_vis_visual.imagem %}
+                                    <img src="{{ jogo.time_vis_visual.imagem }}" class="img-bandeira mb-2">
+                                {% else %}
+                                    <div class="img-bandeira d-flex align-items-center justify-content-center bg-light text-muted">?</div>
+                                {% endif %}
+                                <div class="time-nome">{{ jogo.time_vis_visual.nome }}</div>
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white text-center text-muted small border-top-0">
+                        Jogo {{ jogo.partida.numero_jogo }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if lista_jogos %}
+        <div class="text-center mt-4 mb-5">
+            <button type="submit" class="btn btn-success btn-lg px-5 shadow fw-bold">SALVAR MATA-MATA E SIMULAR</button>
+        </div>
+        {% endif %}
+      </form>
+
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>

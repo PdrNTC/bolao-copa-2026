@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Entrar - Bolão</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    {% load static %}
+
+    <link rel="icon" type="image/png" href="{% static 'imgs/logo_copa_2026.png' %}">
+
+    <style>
+      body {
+        /* Define a imagem de fundo usando a tag static */
+        background-image: url("{% static 'imgs/img_copa_fundo_login.png' %}");
+        
+        /* Garante que a imagem cubra toda a tela sem distorcer */
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed; /* Mantém o fundo fixo ao rolar */
+        
+        /* Centralização do conteúdo */
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        
+        /* Cor de fundo de fallback caso a imagem não carregue */
+        background-color: #f0f2f5; 
+      }
+
+      /* Estilo para o card de login ficar semi-transparente */
+      .login-card {
+        background-color: rgba(255, 255, 255, 0.616); /* Branco com 90% de opacidade */
+        border: none;
+        border-radius: 15px; /* Bordas mais arredondadas */
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card login-card shadow p-4 p-md-5" style="width: 100%; max-width: 400px;">
+        <h3 class="text-center mb-4">Login - Bolão da Copa 2026</h3>
+        
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label" style="font-weight: 500;">Usuário</label>
+                <input type="text" name="username" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" style="font-weight: 500;">Senha</label>
+                <input type="password" name="password" class="form-control" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 p-2" style="background-color: #044A80; border: none;">Entrar</button>
+        </form>
+        
+        <hr>
+        <div class="text-center">
+            <p class="mb-2">Ainda não tem conta?</p>
+            <a href="{% url 'cadastro' %}" class="btn btn-outline-success btn-sm">Criar Nova Conta</a>
+        </div>
+    </div>
+  </body>
+</html>

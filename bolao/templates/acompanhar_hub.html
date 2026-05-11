@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Acompanhar Palpites - Bolão 2026</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    {% load static %}
+    <style>
+        body { background-color: #00122b; font-family: 'Segoe UI', Roboto, sans-serif; }
+        .navbar-custom { background-color: #000000; border-bottom: 3px solid #0d6efd; }
+        .navbar-brand { font-weight: 800; letter-spacing: 0.5px; font-size: 1.1rem; }
+        .card-jogador { border: none; border-radius: 15px; transition: transform 0.2s, box-shadow 0.2s; background: #fff; cursor: pointer; text-decoration: none; color: inherit; display: block; }
+        .card-jogador:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.4); }
+        .avatar-circle { width: 60px; height: 60px; background-color: #0d6efd; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; margin: 0 auto 15px; }
+    </style>
+  </head>
+  <body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom py-3 shadow-sm mb-5">
+      <div class="container">
+        <a class="navbar-brand d-flex align-items-center" href="#">
+          <img src="{% static 'imgs/logo_copa_2026.png' %}" alt="Logo FIFA" height="40" class="me-3">
+          COPA DO MUNDO DA FIFA 2026™
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <div class="navbar-nav ms-4">
+                <a class="nav-link" href="{% url 'ranking' %}">Classificação</a>
+                <a class="nav-link" href="{% url 'palpites' %}">Jogos</a>
+                <a class="nav-link" href="{% url 'etapa_16avos' %}">Mata-Mata</a>
+                <a class="nav-link" href="{% url 'palpites_extras' %}">Bônus</a>
+                <a class="nav-link active fw-bold" href="{% url 'acompanhar_hub' %}">Acompanhar Palpites</a>
+            </div>
+            <span class="navbar-text text-white ms-auto">
+                <span class="me-3 opacity-75">Olá, <strong>{{ user.username }}</strong></span>
+            </span>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container text-center pb-5">
+        <h2 class="fw-bold mb-3 text-white">👀 Espião de Palpites</h2>
+        <p class="text-light opacity-75 fs-5 mb-5">Veja os palpites dos jogadores que já concluíram o preenchimento.</p>
+
+        <div class="row justify-content-center">
+            {% for jogador in usuarios_concluidos %}
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                <a href="{% url 'acompanhar_detalhe' jogador.id %}" class="card card-jogador shadow p-4 text-center">
+                    <div class="avatar-circle">{{ jogador.username|make_list|first|upper }}</div>
+                    <h5 class="fw-bold mb-1">{{ jogador.username }}</h5>
+                    <span class="badge bg-success mt-2">Palpites Concluídos</span>
+                </a>
+            </div>
+            {% empty %}
+                <div class="alert alert-warning mx-auto" style="max-width: 500px;">Nenhum jogador finalizou os palpites ainda.</div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>

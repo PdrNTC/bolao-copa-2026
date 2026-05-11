@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Fase de Grupos - Bolão 2026</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    {% load static %}
+
+    <link rel="icon" type="image/png" href="{% static 'imgs/logo_copa_2026.png' %}">
+
+    <style>
+        body { 
+            background-color: #00122b; 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+        
+        .navbar-custom {
+            background-color: #000000;
+            border-bottom: 3px solid #0d6efd;
+        }
+
+        .navbar-brand {
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            font-size: 1.1rem;
+        }
+
+        .card-jogo { 
+            border: none; 
+            border-radius: 12px; 
+            margin-bottom: 20px; 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3); 
+        }
+        .data-header { font-size: 0.85rem; color: #fff; background: #343a40; padding: 8px 15px; border-bottom: 1px solid #eee; border-radius: 12px 12px 0 0; }
+        .time-nome { font-weight: 600; font-size: 1.1rem; width: 35%; text-align: center; }
+        .input-placar { width: 60px; height: 50px; text-align: center; font-size: 1.4rem; font-weight: bold; border-radius: 8px; border: 2px solid #dee2e6; }
+        .input-placar:focus { border-color: #0d6efd; box-shadow: none; }
+        .input-placar:disabled { background-color: #e9ecef; color: #495057; border-color: #ced4da; }
+        .x-div { font-weight: bold; color: #adb5bd; margin: 0 10px; font-size: 1.2rem; }
+    </style>
+  </head>
+  <body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom py-3 shadow-sm mb-4">
+      <div class="container">
+        <a class="navbar-brand d-flex align-items-center" href="#">
+          <img src="{% static 'imgs/logo_copa_2026.png' %}" alt="Logo FIFA 2026" height="40" class="me-3">
+          COPA DO MUNDO DA FIFA 2026™
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <div class="navbar-nav ms-4">
+                <a class="nav-link" href="{% url 'ranking' %}">Classificação</a>
+                <a class="nav-link active fw-bold" href="{% url 'palpites' %}">Jogos</a>
+                <a class="nav-link" href="{% url 'etapa_16avos' %}">Mata-Mata</a>
+                <a class="nav-link" href="{% url 'palpites_extras' %}">Apostas Bônus</a>
+                <a class="nav-link" href="{% url 'acompanhar_hub' %}">Acompanhar Palpites</a>
+            </div>
+            <span class="navbar-text text-white ms-auto d-flex align-items-center">
+                <span class="me-3 opacity-75">Olá, <strong>{{ user.username }}</strong></span>
+                <form action="{% url 'logout' %}" method="post" class="m-0 p-0">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-light rounded-pill px-3 fw-bold">Sair</button>
+                </form>
+            </span>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container pb-5">
+        
+        <div class="text-center mb-4 text-white">
+            <h2 class="fw-bold">Faça seus Palpites</h2>
+            {% if ja_palpitou %}
+                <div class="alert alert-success mt-3 shadow-sm text-dark mx-auto" style="max-width: 600px;">
+                    ✅ <strong>Palpites Realizados!</strong><br>
+                    Seus jogos da fase de grupos estão salvos. O sistema já gerou seus confrontos de Mata-Mata automaticamente.
+                    <br><a href="{% url 'etapa_16avos' %}" class="btn btn-sm btn-success mt-3 fw-bold px-4 py-2 shadow">IR PARA MATA-MATA ➡️</a>
+                </div>
+            {% else %}
+                <p class="text-light opacity-75 fs-5">Preencha todos os jogos da primeira fase. <strong>Atenção:</strong> Você só poderá salvar uma vez!</p>
+            {% endif %}
+        </div>
+
+        <form method="POST">
+            {% csrf_token %}
+            
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    {% for item in lista_jogos %}
+                    <div class="card card-jogo">
+                        <div class="data-header d-flex justify-content-between">
+                            <span>{{ item.partida.data_jogo|date:"d/m/Y - H:i" }} | <span class="text-info">{{ item.partida.get_fase_display }}</span></span>
+                            <span class="badge bg-light text-dark border align-self-center">Grupo {{ item.partida.time_casa.grupo }}</span>
+                        </div>
+                        <div class="card-body d-flex align-items-center justify-content-between py-4">
+                            
+                            <div class="time-nome">{{ item.partida.time_casa.nome }}</div>
+
+                            <div class="d-flex align-items-center">
+                                <input type="number" class="form-control input-placar" name="gols_casa_{{ item.partida.id }}" value="{{ item.palpite_casa }}" min="0" required {% if ja_palpitou %}disabled{% endif %}>
+                                <span class="x-div">X</span>
+                                <input type="number" class="form-control input-placar" name="gols_vis_{{ item.partida.id }}" value="{{ item.palpite_vis }}" min="0" required {% if ja_palpitou %}disabled{% endif %}>
+                            </div>
+
+                            <div class="time-nome">{{ item.partida.time_visitante.nome }}</div>
+
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {% if not ja_palpitou %}
+            <div class="text-center mt-4 mb-5">
+                <div class="alert alert-warning d-inline-block fw-bold shadow">
+                    ⚠️ Confira tudo antes de salvar. Não será possível editar depois.
+                </div>
+                <br>
+                <button type="submit" class="btn btn-primary btn-lg px-5 py-3 fw-bold shadow mt-2">
+                    SALVAR PALPITES DEFINITIVOS
+                </button>
+            </div>
+            {% endif %}
+
+        </form>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
