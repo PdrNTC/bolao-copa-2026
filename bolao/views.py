@@ -6,7 +6,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.utils import timezone
 
 # Importe os novos Models e Utils
-from .models import Partida, Palpite, PalpiteExtra, PerguntaExtra, PalpitePodium
+from .models import Partida, Palpite, PalpiteExtra, PerguntaExtra, PalpitePodium, Time
 # Importa a classificação do services, e o resto do utils
 from .services import calcular_classificacao_usuario 
 from .utils import resolver_partida_mata_mata, simular_caminho_usuario
@@ -55,57 +55,70 @@ def ranking(request):
 # --- PALPITES MATA-MATA INTELIGENTE ---
 @login_required
 def palpites_matamata(request):
-    # Fases que queremos mostrar nessa tela
     fases_finais = ['16AVOS', 'OITAVAS', 'QUARTAS', 'SEMI', '3LUGAR', 'FINAL']
     
     if request.method == 'POST':
-        # Busca apenas partidas de mata-mata
         partidas = Partida.objects.filter(fase__in=fases_finais)
-        
         for partida in partidas:
             placar_casa = request.POST.get(f'gols_casa_{partida.id}')
             placar_vis = request.POST.get(f'gols_vis_{partida.id}')
 
-            if placar_casa and placar_vis:
-                Palpite.objects.update_or_create(
+            if placar_casa is not None and placar_casa != '' and placar_vis is not None and placar_vis != '':
+                vencedor_id = request.POST.get(f'vencedor_{partida.id}')
+                
+                # --- INÍCIO DO RASTREADOR 1 ---
+                #print(f"\n[DEBUG VIEWS] Jogo ID: {partida.id} | Casa: {placar_casa} x Vis: {placar_vis}")
+                #print(f"[DEBUG VIEWS] O HTML enviou o Vencedor ID: '{vencedor_id}'")
+                # --- FIM DO RASTREADOR 1 ---
+
+                dados_palpite = {
+                    'palpite_casa': int(placar_casa),
+                    'palpite_visitante': int(placar_vis),
+                }
+                
+                if vencedor_id:
+                    dados_palpite['vencedor_confronto_id'] = int(vencedor_id)
+                else:
+                    dados_palpite['vencedor_confronto_id'] = None 
+
+                palpite_salvo, created = Palpite.objects.update_or_create(
                     usuario=request.user,
                     partida=partida,
-                    defaults={
-                        'palpite_casa': int(placar_casa),
-                        'palpite_visitante': int(placar_vis)
-                    }
+                    defaults=dados_palpite
                 )
+                
+                # --- INÍCIO DO RASTREADOR 2 ---
+                #print(f"[DEBUG VIEWS] O Banco de Dados salvou o Vencedor ID: '{palpite_salvo.vencedor_confronto_id}'\n")
+                # --- FIM DO RASTREADOR 2 ---
         
-        # O PULO DO GATO:
-        # Após salvar os palpites do mata-mata, o sistema roda a simulação
-        # para descobrir quem é o Campeão Virtual desse usuário e salvar no Pódio.
         simular_caminho_usuario(request.user)
-        
         return redirect('ranking')
 
     else:
-        # GET: Preparar a visualização inteligente
-        
-        # 1. Calcula toda a classificação dos grupos desse usuário
         classificados = calcular_classificacao_usuario(request.user)
-        
         partidas = Partida.objects.filter(fase__in=fases_finais).order_by('numero_jogo')
         lista_jogos = []
 
         for partida in partidas:
-            # Descobre quem joga (Brasil? França?) baseado nos palpites anteriores
             t_casa, t_vis = resolver_partida_mata_mata(partida, classificados, request.user)
-            
             palpite = Palpite.objects.filter(usuario=request.user, partida=partida).first()
+
+            # EXTRAÍMOS OS IDS DIRETAMENTE AQUI PARA O HTML NÃO SE PERDER
+            id_casa_real = t_casa.id if (t_casa and hasattr(t_casa, 'id')) else None
+            id_vis_real = t_vis.id if (t_vis and hasattr(t_vis, 'id')) else None
 
             lista_jogos.append({
                 'partida': partida,
-                # Se o sistema conseguiu calcular o time, mostra o nome e bandeira.
-                # Se não (ex: usuário não preencheu os grupos), mostra a referência (ex: "1º do A")
                 'time_casa_visual': t_casa if t_casa else {'nome': f'({partida.referencia_casa})', 'imagem': ''},
                 'time_vis_visual': t_vis if t_vis else {'nome': f'({partida.referencia_visitante})', 'imagem': ''},
+                
+                # ESTAS DUAS LINHAS SÃO A CHAVE DA SOLUÇÃO:
+                'id_casa_puro': id_casa_real,
+                'id_vis_puro': id_vis_real,
+
                 'palpite_casa': palpite.palpite_casa if palpite else '',
-                'palpite_vis': palpite.palpite_visitante if palpite else ''
+                'palpite_vis': palpite.palpite_visitante if palpite else '',
+                'vencedor_confronto_id': palpite.vencedor_confronto_id if palpite else None
             })
 
         return render(request, 'palpites_matamata.html', {'lista_jogos': lista_jogos})
@@ -152,10 +165,8 @@ def meus_palpites(request):
 def gerenciar_etapa(request, fases_da_etapa, titulo_etapa, proxima_url, progresso_val):
     """
     Controla qualquer etapa do mata-mata: verifica bloqueio, salva, simula e redireciona.
-    aceita 'progresso_val' para controlar a barra de progresso
     """
     # Verifica se essa etapa ESPECÍFICA já foi preenchida
-
     ja_preencheu_etapa = Palpite.objects.filter(
         usuario=request.user, 
         partida__fase__in=fases_da_etapa
@@ -169,10 +180,26 @@ def gerenciar_etapa(request, fases_da_etapa, titulo_etapa, proxima_url, progress
         for partida in partidas:
             gc = request.POST.get(f'gols_casa_{partida.id}')
             gv = request.POST.get(f'gols_vis_{partida.id}')
-            if gc and gv:
+            
+            # --- ADICIONADO: Captura do vencedor do confronto ---
+            vencedor_id = request.POST.get(f'vencedor_{partida.id}')
+
+            if gc is not None and gc != '' and gv is not None and gv != '':
+                dados_palpite = {
+                    'palpite_casa': int(gc),
+                    'palpite_visitante': int(gv),
+                }
+
+                # --- ADICIONADO: Lógica para salvar o vencedor ---
+                if vencedor_id:
+                    dados_palpite['vencedor_confronto_id'] = int(vencedor_id)
+                else:
+                    dados_palpite['vencedor_confronto_id'] = None
+
                 Palpite.objects.update_or_create(
-                    usuario=request.user, partida=partida,
-                    defaults={'palpite_casa': int(gc), 'palpite_visitante': int(gv)}
+                    usuario=request.user, 
+                    partida=partida,
+                    defaults=dados_palpite
                 )
         
         simular_caminho_usuario(request.user)
@@ -195,12 +222,22 @@ def gerenciar_etapa(request, fases_da_etapa, titulo_etapa, proxima_url, progress
             t_casa, t_vis = resolver_partida_mata_mata(partida, classificados, request.user)
             palpite = Palpite.objects.filter(usuario=request.user, partida=partida).first()
 
+            # --- ADICIONADO: Extração dos IDs puros para o HTML ---
+            id_casa_real = t_casa.id if (t_casa and hasattr(t_casa, 'id')) else None
+            id_vis_real = t_vis.id if (t_vis and hasattr(t_vis, 'id')) else None
+
             lista_jogos.append({
                 'partida': partida,
                 'time_casa_visual': t_casa if t_casa else {'nome': formatar_nome(partida.referencia_casa), 'imagem': ''},
                 'time_vis_visual': t_vis if t_vis else {'nome': formatar_nome(partida.referencia_visitante), 'imagem': ''},
+                
+                # SÃO ESSAS VARIÁVEIS QUE O SEU HTML USA:
+                'id_casa_puro': id_casa_real,
+                'id_vis_puro': id_vis_real,
+
                 'palpite_casa': palpite.palpite_casa if palpite else '',
-                'palpite_vis': palpite.palpite_visitante if palpite else ''
+                'palpite_vis': palpite.palpite_visitante if palpite else '',
+                'vencedor_confronto_id': palpite.vencedor_confronto_id if palpite else None
             })
 
         return render(request, 'etapa_matamata.html', {
@@ -208,7 +245,7 @@ def gerenciar_etapa(request, fases_da_etapa, titulo_etapa, proxima_url, progress
             'titulo': titulo_etapa,
             'ja_preencheu': ja_preencheu_etapa,
             'proxima_url': proxima_url,
-            'progresso': progresso_val  # <--- Enviando o valor para o HTML
+            'progresso': progresso_val
         })
 
 def cadastro(request):

@@ -54,6 +54,15 @@ class Palpite(models.Model):
     palpite_visitante = models.IntegerField()
     pontos = models.IntegerField(default=0)
 
+    # NOVO CAMPO: Guarda quem o usuário acha que passa de fase#
+    vencedor_confronto = models.ForeignKey(
+        'Time', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='palpites_vencidos'
+    )
+
     class Meta:
         unique_together = ('usuario', 'partida')
 

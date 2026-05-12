@@ -16,88 +16,102 @@ def resolver_partida_mata_mata(partida, classificados_usuario, user):
 def resolver_time_virtual(referencia, classificados, user):
     if not referencia: return None
     
-    # Referência de Grupo (1A, 2B...)
     if referencia in classificados:
         return classificados[referencia]
     
-    # Referência de Jogo Anterior (W=Winner, L=Loser)
     if referencia.startswith('W') or referencia.startswith('L'):
         try:
-            num = int(referencia[1:]) # Pega o número (ex: 101)
+            num = int(referencia[1:])
             jogo_ant = Partida.objects.get(numero_jogo=num)
-            
-            # Recursão: Quem joga esse jogo anterior?
             tc_ant, tv_ant = resolver_partida_mata_mata(jogo_ant, classificados, user)
-            
-            # Qual foi o palpite do usuário?
             palpite = Palpite.objects.filter(usuario=user, partida=jogo_ant).first()
             
             if palpite and tc_ant and tv_ant:
-                p_casa = palpite.palpite_casa
-                p_vis = palpite.palpite_visitante
+                p_casa = int(palpite.palpite_casa)
+                p_vis = int(palpite.palpite_visitante)
                 
-                # LÓGICA DO VENCEDOR (W)
+                # --- AJUSTE: LÓGICA DO VENCEDOR (W) ---
                 if referencia.startswith('W'):
-                    if p_casa > p_vis: return tc_ant
-                    elif p_vis > p_casa: return tv_ant
-                    return tc_ant # Empate no palpite (Default Casa)
+                    if p_casa > p_vis: 
+                        return tc_ant
+                    elif p_vis > p_casa: 
+                        return tv_ant
+                    else:
+                        # Se escolheu o visitante nos pênaltis, ele passa. 
+                        # Caso contrário (ou se None), passa o da casa.
+                        id_salvo = str(palpite.vencedor_confronto_id)
+                        id_visitante = str(tv_ant.id)
+                        if id_salvo == id_visitante:
+                            return tv_ant
+                        return tc_ant
 
-                # LÓGICA DO PERDEDOR (L) - NOVA!
+                # --- AJUSTE: LÓGICA DO PERDEDOR (L) ---
                 elif referencia.startswith('L'):
-                    if p_casa > p_vis: return tv_ant # Se Casa ganhou, Perdedor é Visitante
-                    elif p_vis > p_casa: return tc_ant # Se Vis ganhou, Perdedor é Casa
-                    return tv_ant # Empate no palpite (Default Visitante)
+                    if p_casa > p_vis: 
+                        return tv_ant 
+                    elif p_vis > p_casa: 
+                        return tc_ant 
+                    else:
+                        # Se o visitante foi o vencedor escolhido, o perdedor É A CASA.
+                        # Isso impede que o mesmo time vá para a Final e para o 3º lugar.
+                        id_salvo = str(palpite.vencedor_confronto_id)
+                        id_visitante = str(tv_ant.id)
+                        if id_salvo == id_visitante:
+                            return tc_ant
+                        return tv_ant
 
         except: pass
-    
     return None
 
 def simular_caminho_usuario(user):
     """
-    Salva o pódio virtual do usuário.
+    Atualiza o Pódio Virtual (Campeão, Vice, 3º e 4º)
     """
-    # 1. Calcula a base (fase de grupos)
     classificados = calcular_classificacao_usuario(user)
     
-    # 2. Simula Final
     jogo_final = Partida.objects.filter(fase='FINAL').first()
     jogo_terceiro = Partida.objects.filter(fase='3LUGAR').first()
     
     if not jogo_final: return
 
-    # Descobre campeão/vice
-    tc_final, tv_final = resolver_partida_mata_mata(jogo_final, classificados, user)
-    palpite_final = Palpite.objects.filter(usuario=user, partida=jogo_final).first()
+    # --- LÓGICA DA FINAL ---
+    tc_f, tv_f = resolver_partida_mata_mata(jogo_final, classificados, user)
+    palp_f = Palpite.objects.filter(usuario=user, partida=jogo_final).first()
     
-    campeao = None
-    vice = None
-    
-    if palpite_final and tc_final and tv_final:
-        if palpite_final.palpite_casa > palpite_final.palpite_visitante:
-            campeao = tc_final
-            vice = tv_final
+    campeao, vice = None, None
+    if palp_f and tc_f and tv_f:
+        if palp_f.palpite_casa > palp_f.palpite_visitante:
+            campeao, vice = tc_f, tv_f
+        elif palp_f.palpite_visitante > palp_f.palpite_casa:
+            campeao, vice = tv_f, tc_f
         else:
-            campeao = tv_final
-            vice = tc_final
+            # AJUSTE: Respeita os pênaltis na Final
+            id_s = str(palp_f.vencedor_confronto_id)
+            if id_s == str(tv_f.id):
+                campeao, vice = tv_f, tc_f
+            else:
+                campeao, vice = tc_f, tv_f
             
-    # Descobre 3º/4º
-    terceiro = None
-    quarto = None
+    # --- LÓGICA DO 3º LUGAR ---
+    terceiro, quarto = None, None
     if jogo_terceiro:
         tc_3, tv_3 = resolver_partida_mata_mata(jogo_terceiro, classificados, user)
-        palpite_3 = Palpite.objects.filter(usuario=user, partida=jogo_terceiro).first()
-        if palpite_3 and tc_3 and tv_3:
-             if palpite_3.palpite_casa > palpite_3.palpite_visitante:
-                terceiro = tc_3
-                quarto = tv_3
+        palp_3 = Palpite.objects.filter(usuario=user, partida=jogo_terceiro).first()
+        if palp_3 and tc_3 and tv_3:
+             if palp_3.palpite_casa > palp_3.palpite_visitante:
+                terceiro, quarto = tc_3, tv_3
+             elif palp_3.palpite_visitante > palp_3.palpite_casa:
+                terceiro, quarto = tv_3, tc_3
              else:
-                terceiro = tv_3
-                quarto = tc_3
+                # AJUSTE: Respeita os pênaltis no 3º lugar
+                id_s = str(palp_3.vencedor_confronto_id)
+                if id_s == str(tv_3.id):
+                    terceiro, quarto = tv_3, tc_3
+                else:
+                    terceiro, quarto = tc_3, tv_3
 
-    # Salva
+    # Salva no banco de dados
     podium, _ = PalpitePodium.objects.get_or_create(usuario=user)
-    podium.campeao = campeao
-    podium.vice = vice
-    podium.terceiro = terceiro
-    podium.quarto = quarto
+    podium.campeao, podium.vice = campeao, vice
+    podium.terceiro, podium.quarto = terceiro, quarto
     podium.save()

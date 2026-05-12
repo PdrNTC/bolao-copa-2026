@@ -46,16 +46,25 @@
         <p class="text-light opacity-75 fs-5 mb-5">Veja os palpites dos jogadores que já concluíram o preenchimento.</p>
 
         <div class="row justify-content-center">
-            {% for jogador in usuarios_concluidos %}
-            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-                <a href="{% url 'acompanhar_detalhe' jogador.id %}" class="card card-jogador shadow p-4 text-center">
-                    <div class="avatar-circle">{{ jogador.username|make_list|first|upper }}</div>
-                    <h5 class="fw-bold mb-1">{{ jogador.username }}</h5>
-                    <span class="badge bg-success mt-2">Palpites Concluídos</span>
-                </a>
-            </div>
-            {% empty %}
-                <div class="alert alert-warning mx-auto" style="max-width: 500px;">Nenhum jogador finalizou os palpites ainda.</div>
+            {% for usuario in usuarios_concluidos %}
+                
+                {% cycle '#FF6B6B' '#4ECDC4' '#45B7D1' '#9B59B6' '#F39C12' '#2ECC71' '#E74C3C' as cor_avatar %}
+
+                <div class="col-md-3 mb-4">
+                    <div class="card text-center p-4 shadow-sm border-0" style="border-radius: 15px;">
+                        
+                        <div class="mx-auto d-flex align-items-center justify-content-center text-white fw-bold fs-4 mb-3" 
+                            style="width: 60px; height: 60px; border-radius: 50%; background-color: {{ cor_avatar }};">
+                            {{ usuario.username.0|upper }}
+                        </div>
+                        
+                        <h5 class="fw-bold text-dark">{{ usuario.username }}</h5>
+                        <span class="badge bg-success rounded-pill mt-2 py-2 px-3">Palpites Concluídos</span>
+                        
+                        <a href="{% url 'acompanhar_detalhe' usuario.id %}" class="stretched-link"></a>
+                    </div>
+                </div>
+                
             {% endfor %}
         </div>
     </div>
