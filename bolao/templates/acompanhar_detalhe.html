@@ -79,11 +79,23 @@
                                 
                                 {% for palpite in fase.list %}
                                 <div class="placar-linha">
-                                    <div class="time casa">{{ palpite.time_casa }}</div>
+                                    <div class="time casa d-flex align-items-center justify-content-end gap-2">
+                                        {{ palpite.time_casa }}
+                                        {% if palpite.img_casa %}
+                                            <img src="{{ palpite.img_casa }}" width="25" class="border rounded-1 shadow-sm">
+                                        {% endif %}
+                                    </div>
+                                    
                                     <div class="resultado-box mx-3">
                                         {{ palpite.gols_casa }} x {{ palpite.gols_vis }}
                                     </div>
-                                    <div class="time vis">{{ palpite.time_vis }}</div>
+                                    
+                                    <div class="time vis d-flex align-items-center justify-content-start gap-2">
+                                        {% if palpite.img_vis %}
+                                            <img src="{{ palpite.img_vis }}" width="25" class="border rounded-1 shadow-sm">
+                                        {% endif %}
+                                        {{ palpite.time_vis }}
+                                    </div>
                                 </div>
                                 {% endfor %}
 

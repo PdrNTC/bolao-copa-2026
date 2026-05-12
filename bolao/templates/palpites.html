@@ -99,7 +99,12 @@
                         </div>
                         <div class="card-body d-flex align-items-center justify-content-between py-4">
                             
-                            <div class="time-nome">{{ item.partida.time_casa.nome }}</div>
+                            <div class="time-nome d-flex align-items-center justify-content-end gap-2">
+                                <span>{{ item.partida.time_casa.nome }}</span>
+                                {% if item.partida.time_casa.imagem %}
+                                    <img src="{{ item.partida.time_casa.imagem }}" width="30" class="border rounded shadow-sm">
+                                {% endif %}
+                            </div>
 
                             <div class="d-flex align-items-center">
                                 <input type="number" class="form-control input-placar" name="gols_casa_{{ item.partida.id }}" value="{{ item.palpite_casa }}" min="0" required {% if ja_palpitou %}disabled{% endif %}>
@@ -107,7 +112,12 @@
                                 <input type="number" class="form-control input-placar" name="gols_vis_{{ item.partida.id }}" value="{{ item.palpite_vis }}" min="0" required {% if ja_palpitou %}disabled{% endif %}>
                             </div>
 
-                            <div class="time-nome">{{ item.partida.time_visitante.nome }}</div>
+                            <div class="time-nome d-flex align-items-center justify-content-start gap-2">
+                                {% if item.partida.time_visitante.imagem %}
+                                    <img src="{{ item.partida.time_visitante.imagem }}" width="30" class="border rounded shadow-sm">
+                                {% endif %}
+                                <span>{{ item.partida.time_visitante.nome }}</span>
+                            </div>
 
                         </div>
                     </div>
