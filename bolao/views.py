@@ -291,8 +291,13 @@ def acompanhar_detalhe(request, usuario_id):
     
     palpites_processados = []
     for p in palpites_db:
-        # Resolve quem são os times na visão deste jogador
-        tc, tv = resolver_partida_mata_mata(p.partida, classificados_jogador, jogador)
+        # SE FOR GRUPOS: Pega o time fixo do banco de dados
+        if p.partida.fase == 'GRUPOS':
+            tc = p.partida.time_casa
+            tv = p.partida.time_visitante
+        # SE FOR MATA-MATA: Resolve baseado nos palpites do jogador
+        else:
+            tc, tv = resolver_partida_mata_mata(p.partida, classificados_jogador, jogador)
         
         palpites_processados.append({
             'fase': p.partida.get_fase_display(),
