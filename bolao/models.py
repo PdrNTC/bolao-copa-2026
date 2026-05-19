@@ -50,11 +50,23 @@ class Partida(models.Model):
         return f"Jogo {self.numero_jogo}: {nome_casa} x {nome_vis}"
     
     def save(self, *args, **kwargs):
+        # 1. Primeiro, salva os resultados reais da Partida no banco
         super().save(*args, **kwargs)
-        # Chama o serviço de automação sempre que uma partida é salva
-        from .services import atualizar_confrontos, calcular_pontos_podium_geral
-        atualizar_confrontos() # Monta chave
-        calcular_pontos_podium_geral() # Calcula pontos de campeão
+        
+        # 2. Puxa todos os palpites que os usuários fizeram PARA ESTE JOGO
+        palpites = self.palpite_set.all() 
+        for palpite in palpites:
+            palpite.calcular_pontuacao() # Calcula a nota (ex: 10 pontos)
+            palpite.save()               # O SEGREDO ESTÁ AQUI: Salva a nota no banco!
+            print(f"Palpite de {palpite.usuario.username} atualizado para {palpite.pontos} pontos no banco de dados.")
+        
+        # 3. Chama o serviço de automação do mata-mata
+        try:
+            from .services import atualizar_confrontos, calcular_pontos_podium_geral
+            atualizar_confrontos() # Monta chave do mata-mata
+            calcular_pontos_podium_geral() # Calcula pontos de campeão
+        except ImportError:
+            pass
 
 # 3. Palpites
 class Palpite(models.Model):
