@@ -28,6 +28,11 @@
         .time.casa { text-align: right; }
         .time.vis { text-align: left; }
         .resultado-box { background: #e9ecef; padding: 5px 15px; border-radius: 8px; font-weight: 800; font-size: 1.2rem; min-width: 80px; text-align: center; }
+
+        /* Estilo para as Abas no Fundo Escuro */
+        .nav-pills .nav-link { color: rgba(255, 255, 255, 0.7); }
+        .nav-pills .nav-link:hover { color: #fff; }
+        .nav-pills .nav-link.active { background-color: #0d6efd; color: #fff; }
     </style>
   </head>
   <body>
@@ -64,48 +69,124 @@
                     </div>
                 </div>
 
-                {% regroup palpites by fase as fases_list %}
+                <ul class="nav nav-pills nav-justified mb-4" id="pills-tab" role="tablist">
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link active fw-bold" id="pills-grupos-tab" data-bs-toggle="pill" data-bs-target="#pills-grupos" type="button" role="tab" aria-selected="true">Classificação dos Grupos</button>
+                  </li>
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-bold" id="pills-jogos-tab" data-bs-toggle="pill" data-bs-target="#pills-jogos" type="button" role="tab" aria-selected="false">Jogos e Mata-Mata</button>
+                  </li>
+                </ul>
 
-                <div class="accordion shadow-sm" id="accordionPalpites">
-                    {% for fase in fases_list %}
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="heading-{{ forloop.counter }}">
-                            <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ forloop.counter }}">
-                                📌 {{ fase.grouper }}
-                            </button>
+                <div class="tab-content" id="pills-tabContent">
+                  
+                  <div class="tab-pane fade show active" id="pills-grupos" role="tabpanel" aria-labelledby="pills-grupos-tab">
+                    
+                    <h5 class="text-white mb-3 fw-bold mt-2">🏆 1º e 2º Colocados</h5>
+                    
+                    <div class="accordion mb-4 shadow-sm" id="accordionGrupos">
+                      {% for grupo in resumo_grupos %}
+                      <div class="accordion-item">
+                        <h2 class="accordion-header" id="heading{{ grupo.letra }}">
+                          <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ grupo.letra }}" aria-expanded="false" aria-controls="collapse{{ grupo.letra }}">
+                            Grupo {{ grupo.letra }}
+                          </button>
                         </h2>
-                        <div id="collapse-{{ forloop.counter }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" data-bs-parent="#accordionPalpites">
-                            <div class="accordion-body">
-                                
-                                {% for palpite in fase.list %}
-                                <div class="placar-linha">
-                                    <div class="time casa d-flex align-items-center justify-content-end gap-2">
-                                        {{ palpite.time_casa }}
-                                        {% if palpite.img_casa %}
-                                            <img src="{{ palpite.img_casa }}" width="25" class="border rounded-1 shadow-sm">
-                                        {% endif %}
-                                    </div>
-                                    
-                                    <div class="resultado-box mx-3">
-                                        {{ palpite.gols_casa }} x {{ palpite.gols_vis }}
-                                    </div>
-                                    
-                                    <div class="time vis d-flex align-items-center justify-content-start gap-2">
-                                        {% if palpite.img_vis %}
-                                            <img src="{{ palpite.img_vis }}" width="25" class="border rounded-1 shadow-sm">
-                                        {% endif %}
-                                        {{ palpite.time_vis }}
-                                    </div>
+                        <div id="collapse{{ grupo.letra }}" class="accordion-collapse collapse" aria-labelledby="heading{{ grupo.letra }}" data-bs-parent="#accordionGrupos">
+                          <div class="accordion-body p-0">
+                            <ul class="list-group list-group-flush">
+                              
+                              <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                  <span class="badge bg-success me-2">1º</span>
+                                  {% if grupo.primeiro.imagem %}<img src="{{ grupo.primeiro.imagem }}" width="24" class="me-2 rounded-1">{% endif %}
+                                  <span class="fw-semibold">{{ grupo.primeiro.nome|default:"A Definir" }}</span>
                                 </div>
-                                {% endfor %}
+                              </li>
+                              
+                              <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                  <span class="badge bg-primary me-2">2º</span>
+                                  {% if grupo.segundo.imagem %}<img src="{{ grupo.segundo.imagem }}" width="24" class="me-2 rounded-1">{% endif %}
+                                  <span class="fw-semibold">{{ grupo.segundo.nome|default:"A Definir" }}</span>
+                                </div>
+                              </li>
 
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                      {% endfor %}
+                    </div>
+
+                    <h5 class="text-white mb-3 fw-bold mt-4">⭐ Os 8 Melhores 3º Colocados</h5>
+                    <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px; background: rgba(255,255,255,0.05);">
+                      <div class="card-body">
+                        <div class="row g-2">
+                          {% for time in melhores_terceiros %}
+                          <div class="col-6 col-md-3">
+                            <div class="d-flex align-items-center border-0 rounded p-2 bg-light h-100 shadow-sm">
+                              <span class="badge bg-secondary me-2">3º</span>
+                              {% if time.imagem %}<img src="{{ time.imagem }}" width="20" class="me-2 rounded-1">{% endif %}
+                              <small class="fw-bold text-truncate text-dark">{{ time.nome }}</small>
+                            </div>
+                          </div>
+                          {% empty %}
+                          <div class="col-12">
+                              <div class="alert alert-dark border-0 text-center mb-0">Nenhum 3º colocado definido ainda.</div>
+                          </div>
+                          {% endfor %}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="tab-pane fade" id="pills-jogos" role="tabpanel" aria-labelledby="pills-jogos-tab">
+                      
+                    {% regroup palpites by fase as fases_list %}
+
+                    <div class="accordion shadow-sm" id="accordionPalpites">
+                        {% for fase in fases_list %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="heading-{{ forloop.counter }}">
+                                <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ forloop.counter }}">
+                                    📌 {{ fase.grouper }}
+                                </button>
+                            </h2>
+                            <div id="collapse-{{ forloop.counter }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" data-bs-parent="#accordionPalpites">
+                                <div class="accordion-body">
+                                    
+                                    {% for palpite in fase.list %}
+                                    <div class="placar-linha">
+                                        <div class="time casa d-flex align-items-center justify-content-end gap-2">
+                                            {{ palpite.time_casa }}
+                                            {% if palpite.img_casa %}
+                                                <img src="{{ palpite.img_casa }}" width="25" class="border rounded-1 shadow-sm">
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div class="resultado-box mx-3">
+                                            {{ palpite.gols_casa }} x {{ palpite.gols_vis }}
+                                        </div>
+                                        
+                                        <div class="time vis d-flex align-items-center justify-content-start gap-2">
+                                            {% if palpite.img_vis %}
+                                                <img src="{{ palpite.img_vis }}" width="25" class="border rounded-1 shadow-sm">
+                                            {% endif %}
+                                            {{ palpite.time_vis }}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+
+                                </div>
                             </div>
                         </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
-                </div>
 
-            </div>
+                  </div>
+
+                </div> </div>
         </div>
     </div>
 
