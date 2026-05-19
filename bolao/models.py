@@ -34,6 +34,16 @@ class Partida(models.Model):
     referencia_casa = models.CharField(max_length=10, blank=True, null=True)
     referencia_visitante = models.CharField(max_length=10, blank=True, null=True)
 
+    # CAMPO NOVO ADICIONADO PARA OS EMPATES #:
+    vencedor_penaltis = models.ForeignKey(
+        Time, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='vitorias_penaltis_reais',
+        help_text="Apenas para o Admin: preencha quem venceu nos pênaltis caso o jogo real empate."
+    )
+
     def __str__(self):
         nome_casa = self.time_casa.nome if self.time_casa else f"({self.referencia_casa})"
         nome_vis = self.time_visitante.nome if self.time_visitante else f"({self.referencia_visitante})"

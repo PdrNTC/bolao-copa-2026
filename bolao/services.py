@@ -133,16 +133,26 @@ def resolver_time_real(referencia, classificacao):
             num = int(referencia[1:])
             jogo_ant = Partida.objects.get(numero_jogo=num)
             
-            if jogo_ant.gols_casa is not None:
+            # Só calcula se o jogo da vida real já aconteceu (tem os dois placares preenchidos)
+            if jogo_ant.gols_casa is not None and jogo_ant.gols_visitante is not None:
                 vencedor = None
                 perdedor = None
 
+                # Vitória no tempo normal
                 if jogo_ant.gols_casa > jogo_ant.gols_visitante:
                     vencedor = jogo_ant.time_casa
                     perdedor = jogo_ant.time_visitante
-                else:
+                elif jogo_ant.gols_visitante > jogo_ant.gols_casa:
                     vencedor = jogo_ant.time_visitante
                     perdedor = jogo_ant.time_casa
+                # Empate na vida real: Lê o novo campo do Admin
+                else:
+                    if jogo_ant.vencedor_penaltis == jogo_ant.time_casa:
+                        vencedor = jogo_ant.time_casa
+                        perdedor = jogo_ant.time_visitante
+                    else:
+                        vencedor = jogo_ant.time_visitante
+                        perdedor = jogo_ant.time_casa
                 
                 # Retorna o correto
                 if referencia.startswith('W'): return vencedor
