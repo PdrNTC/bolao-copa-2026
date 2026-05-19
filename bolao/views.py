@@ -14,7 +14,8 @@ from .utils import resolver_partida_mata_mata, simular_caminho_usuario
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 
-# --- RANKING ATUALIZADO ---
+# --- RANKING ATUALIZADO --- #
+@login_required # Adicionando Login obrigatorio #
 def ranking(request):
     usuarios = User.objects.all()
     dados_ranking = []
@@ -316,23 +317,38 @@ def acompanhar_detalhe(request, usuario_id):
     jogador = get_object_or_404(User, id=usuario_id)
     podio = PalpitePodium.objects.filter(usuario=jogador).first()
     
-    # Se ele não tem pódio, redireciona de volta (segurança)
     if not podio:
         return redirect('acompanhar_hub')
 
-    # Busca todos os palpites do jogador ordenados pelo número do jogo
     palpites_db = Palpite.objects.filter(usuario=jogador).select_related('partida', 'partida__time_casa', 'partida__time_visitante').order_by('partida__numero_jogo')
     
-    # Precisamos resolver os times do mata-mata baseado nas escolhas DELE
     classificados_jogador = calcular_classificacao_usuario(jogador)
     
+    # === NOVIDADE: PREPARANDO OS DADOS DOS GRUPOS PARA A TELA ===
+    letras_grupos = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L']
+    resumo_grupos = []
+    
+    # Separa 1º e 2º de cada grupo
+    for letra in letras_grupos:
+        resumo_grupos.append({
+            'letra': letra,
+            'primeiro': classificados_jogador.get(f'1{letra}'),
+            'segundo': classificados_jogador.get(f'2{letra}'),
+        })
+        
+    # Separa os 8 melhores terceiros
+    melhores_terceiros = []
+    for i in range(1, 9):
+        time_t = classificados_jogador.get(f'T{i}')
+        if time_t:
+            melhores_terceiros.append(time_t)
+    # ============================================================
+
     palpites_processados = []
     for p in palpites_db:
-        # SE FOR GRUPOS: Pega o time fixo do banco de dados
         if p.partida.fase == 'GRUPOS':
             tc = p.partida.time_casa
             tv = p.partida.time_visitante
-        # SE FOR MATA-MATA: Resolve baseado nos palpites do jogador
         else:
             tc, tv = resolver_partida_mata_mata(p.partida, classificados_jogador, jogador)
         
@@ -350,5 +366,7 @@ def acompanhar_detalhe(request, usuario_id):
     return render(request, 'acompanhar_detalhe.html', {
         'jogador': jogador,
         'podio': podio,
+        'resumo_grupos': resumo_grupos,        # <--- Novo item enviado pra tela
+        'melhores_terceiros': melhores_terceiros, # <--- Novo item enviado pra tela
         'palpites': palpites_processados
     })
