@@ -84,9 +84,72 @@ def calcular_classificacao_usuario(user):
             terceiros.append(t)
 
     # Melhores 3º colocados
+    # Ordena: Pontos > Saldo > Gols
     terceiros.sort(key=lambda x: (x['pts'], x['saldo'], x['gols']), reverse=True)
-    for i, t in enumerate(terceiros[:8]):
-        classificacao[f'T{i+1}'] = t['time']
+    oito_melhores = terceiros[:8]
+
+    # =========================================================================
+    # INÍCIO DO ALGORITMO ANTI-COLISÃO (EMBARALHADOR INTELIGENTE)
+    # =========================================================================
+    
+    # 1. Descobre de qual grupo é o adversário de cada vaga T (T1 a T8)
+    # Ex: Se o T1 joga contra o "1A", o oponente do T1 é do grupo "A".
+    vagas_oponentes = {}
+    jogos_t = Partida.objects.filter(referencia_visitante__startswith='T')
+    
+    for j in jogos_t:
+        if j.referencia_casa and len(j.referencia_casa) == 2:
+            vagas_oponentes[j.referencia_visitante] = j.referencia_casa[1] # Pega só a letra do grupo
+
+    # 2. Distribui os crachás evitando que o time pegue o próprio grupo
+    alocacao = {}
+    disponiveis = list(oito_melhores)
+
+    for i in range(1, 9):
+        vaga = f'T{i}'
+        grupo_oponente = vagas_oponentes.get(vaga)
+        
+        # Tenta achar o melhor time disponível que NÃO seja do grupo do oponente
+        time_escolhido = None
+        for t in disponiveis:
+            if t['time'].grupo != grupo_oponente:
+                time_escolhido = t
+                break
+        
+        if time_escolhido:
+            alocacao[vaga] = time_escolhido['time']
+            disponiveis.remove(time_escolhido)
+        else:
+            # LÓGICA DE SWAP (TROCA INTELIGENTE)
+            # Se todos os que sobraram dão colisão, ele pede para "trocar figurinha" 
+            # com uma vaga anterior que já estava resolvida.
+            if disponiveis:
+                time_problematico = disponiveis[0]
+                alocado_com_sucesso = False
+                
+                for vaga_anterior, time_anterior in alocacao.items():
+                    grupo_anterior_oponente = vagas_oponentes.get(vaga_anterior)
+                    
+                    # Testa se a troca resolve o problema para os dois lados
+                    if time_problematico['time'].grupo != grupo_anterior_oponente and time_anterior.grupo != grupo_oponente:
+                        alocacao[vaga] = time_anterior
+                        alocacao[vaga_anterior] = time_problematico['time']
+                        disponiveis.remove(time_problematico)
+                        alocado_com_sucesso = True
+                        break
+                
+                if not alocado_com_sucesso:
+                    # Fallback absoluto de segurança (evita travar o sistema)
+                    alocacao[vaga] = time_problematico['time']
+                    disponiveis.remove(time_problematico)
+
+    # 3. Grava a alocação final e oficial no dicionário de classificação
+    for vaga, time in alocacao.items():
+        classificacao[vaga] = time
+
+    # =========================================================================
+    # FIM DO ALGORITMO ANTI-COLISÃO
+    # =========================================================================
 
     return classificacao
 
@@ -121,7 +184,8 @@ def atualizar_confrontos():
             mudou = True
         
         if mudou:
-            jogo.save()
+            # A MÁGICA ESTÁ AQUI: Evita o loop infinito!
+            jogo.save(skip_calc=True)
 
 
 def resolver_time_real(referencia, classificacao):
@@ -217,3 +281,117 @@ def calcular_classificacao_grupo_real(letra_grupo):
     # Ordena a tabela por Pontos > Saldo de Gols > Gols Pró
     tabela.sort(key=lambda x: (x['pontos'], x['saldo_gols'], x['gols_pro']), reverse=True)
     return tabela
+
+
+### FUNÇÃO PARA CALCULAR OS PONTOS DOS VENCEDORES DOS GRUPOS ###
+# 1° Lugar e 2° Lugar
+def calcular_pontos_classificacao_grupos():
+    """ REGRA: 75 (Ordem exata), 40 (Invertido), 55 (Só o 1º), 50 (Só o 2º) """
+    from .models import User, PalpitePodium
+    classificacao_real = calcular_classificacao_usuario(user=None)
+    if not classificacao_real: return
+        
+    letras_grupos = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L']
+    
+    for user in User.objects.all():
+        pontos_ganhos = 0
+        classificacao_user = calcular_classificacao_usuario(user)
+        
+        for letra in letras_grupos:
+            c1_real = classificacao_real.get(f'1{letra}')
+            c2_real = classificacao_real.get(f'2{letra}')
+            c1_user = classificacao_user.get(f'1{letra}')
+            c2_user = classificacao_user.get(f'2{letra}')
+            
+            # Só calcula se a vida real já definiu os dois classificados do grupo
+            if c1_real and c2_real:
+                if c1_user == c1_real and c2_user == c2_real:
+                    pontos_ganhos += 75  # Acertou os dois na ordem
+                elif c1_user == c2_real and c2_user == c1_real:
+                    pontos_ganhos += 40  # Acertou os classificados, mas invertidos
+                elif c1_user == c1_real:
+                    pontos_ganhos += 55  # Acertou só o 1º colocado
+                elif c2_user == c2_real:
+                    pontos_ganhos += 50  # Acertou só o 2º colocado
+                
+        podio, _ = PalpitePodium.objects.get_or_create(usuario=user)
+        podio.pontos_fase_grupos = pontos_ganhos
+        podio.save()
+
+
+
+def calcular_pontos_confrontos_matamata():
+    """ REGRA: Parcial vs Completo nas Fases Finais """
+    from .models import User, PalpitePodium, Partida
+    from .utils import resolver_partida_mata_mata
+    
+    # ⚠️ NOTA: Você não especificou pontos para os '16AVOS' na regra, então coloquei 0. 
+    # Se quiser dar pontos para 16-avos, é só trocar os zeros aqui embaixo!
+    tabela_pontos = {
+        '16AVOS': {'parcial': 0, 'completo': 0},
+        'OITAVAS': {'parcial': 100, 'completo': 150},
+        'QUARTAS': {'parcial': 175, 'completo': 200},
+        'SEMI': {'parcial': 225, 'completo': 250},
+        '3LUGAR': {'parcial': 275, 'completo': 300},
+        'FINAL': {'parcial': 325, 'completo': 350},
+    }
+    
+    # Pega apenas jogos do mata-mata que JÁ ESTÃO DEFINIDOS na vida real
+    jogos_reais = Partida.objects.exclude(fase='GRUPOS').filter(time_casa__isnull=False, time_visitante__isnull=False)
+    
+    for user in User.objects.all():
+        pontos_confronto = 0
+        classificados_user = calcular_classificacao_usuario(user)
+        
+        for jogo in jogos_reais:
+            # Pega quem o usuário achava que ia jogar esta partida
+            tc_user, tv_user = resolver_partida_mata_mata(jogo, classificados_user, user)
+            
+            if tc_user and tv_user:
+                # Usamos conjuntos (sets) para ignorar a ordem de Casa x Visitante
+                times_reais = {jogo.time_casa.id, jogo.time_visitante.id}
+                times_user = {tc_user.id, tv_user.id}
+                
+                acertos = len(times_reais.intersection(times_user))
+                
+                fase = jogo.fase
+                if acertos == 2:
+                    pontos_confronto += tabela_pontos[fase]['completo']
+                elif acertos == 1:
+                    pontos_confronto += tabela_pontos[fase]['parcial']
+                    
+        podio, _ = PalpitePodium.objects.get_or_create(usuario=user)
+        podio.pontos_confrontos = pontos_confronto
+        podio.save()
+
+ 
+
+def calcular_pontos_podium_geral():
+    """ REGRA: 500 (Campeão), 450 (Vice), 400 (3º), 350 (4º) """
+    from .models import User, PalpitePodium
+    from .utils import simular_caminho_usuario
+    
+    # 1. Garante que os palpites dos usuários geraram os pódios virtuais deles
+    for u in User.objects.all():
+        simular_caminho_usuario(u)
+        
+    # 2. Pega o Pódio Real da vida real (user=None)
+    podio_real = PalpitePodium.objects.filter(usuario=None).first()
+    if not podio_real:
+        # Se não existe usuário None (Pódio Oficial), cria temporariamente para cálculo
+        simular_caminho_usuario(None)
+        podio_real = PalpitePodium.objects.filter(usuario=None).first()
+
+    if not podio_real: return
+
+    for podio_user in PalpitePodium.objects.exclude(usuario=None):
+        pts_campeao = 500 if (podio_user.campeao and podio_real.campeao and podio_user.campeao == podio_real.campeao) else 0
+        pts_vice = 450 if (podio_user.vice and podio_real.vice and podio_user.vice == podio_real.vice) else 0
+        pts_terceiro = 400 if (podio_user.terceiro and podio_real.terceiro and podio_user.terceiro == podio_real.terceiro) else 0
+        pts_quarto = 350 if (podio_user.quarto and podio_real.quarto and podio_user.quarto == podio_real.quarto) else 0
+        
+        podio_user.pontos_campeao = pts_campeao
+        podio_user.pontos_vice = pts_vice
+        podio_user.pontos_terceiro = pts_terceiro
+        podio_user.pontos_quarto = pts_quarto
+        podio_user.save()

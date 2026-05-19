@@ -50,21 +50,30 @@ class Partida(models.Model):
         return f"Jogo {self.numero_jogo}: {nome_casa} x {nome_vis}"
     
     def save(self, *args, **kwargs):
-        # 1. Primeiro, salva os resultados reais da Partida no banco
+        # 1. Puxa o interruptor 'skip_calc' (se ele não existir, é False)
+        skip_calc = kwargs.pop('skip_calc', False)
+        
+        # 2. Salva os gols da partida no banco
         super().save(*args, **kwargs)
+        
+        # 3. SE O MODO TURBO ESTIVER LIGADO, PARA AQUI E NÃO CALCULA OS PONTOS!
+        if skip_calc:
+            return
         
         # 2. Puxa todos os palpites que os usuários fizeram PARA ESTE JOGO
         palpites = self.palpite_set.all() 
         for palpite in palpites:
             palpite.calcular_pontuacao() # Calcula a nota (ex: 10 pontos)
             palpite.save()               # O SEGREDO ESTÁ AQUI: Salva a nota no banco!
-            print(f"Palpite de {palpite.usuario.username} atualizado para {palpite.pontos} pontos no banco de dados.")
+            #print(f"Palpite de {palpite.usuario.username} atualizado para {palpite.pontos} pontos no banco de dados.")
         
         # 3. Chama o serviço de automação do mata-mata
         try:
-            from .services import atualizar_confrontos, calcular_pontos_podium_geral
+            from .services import atualizar_confrontos, calcular_pontos_podium_geral, calcular_pontos_classificacao_grupos, calcular_pontos_confrontos_matamata
             atualizar_confrontos() # Monta chave do mata-mata
             calcular_pontos_podium_geral() # Calcula pontos de campeão
+            calcular_pontos_classificacao_grupos() # <--- O Gatilho Automático!
+            calcular_pontos_confrontos_matamata() # <--- Novo gatilho dos Confrontos!
         except ImportError:
             pass
 
@@ -136,7 +145,9 @@ class Palpite(models.Model):
 
 # 4. Tabela "Invisível" para guardar o Pódio do Usuário
 class PalpitePodium(models.Model):
-    usuario = models.OneToOneField(User, on_delete=models.CASCADE)
+    #usuario = models.OneToOneField(User, on_delete=models.CASCADE)
+    # ATUALIZADO: Permite salvar o "Pódio Real" (Sem usuário)
+    usuario = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
     
     # O sistema preenche isso sozinho baseado nos palpites do mata-mata
     campeao = models.ForeignKey(Time, on_delete=models.SET_NULL, null=True, blank=True, related_name='aposta_campeao')
@@ -150,8 +161,15 @@ class PalpitePodium(models.Model):
     pontos_terceiro = models.IntegerField(default=0)# 400 pts
     pontos_quarto = models.IntegerField(default=0)  # 350 pts
 
+    # NOVO CAMPO: Guarda os pontos de acerto dos Grupos (1º e 2º colocados)
+    pontos_fase_grupos = models.IntegerField(default=0)
+    pontos_confrontos = models.IntegerField(default=0)
+
     def total_pontos(self):
-        return self.pontos_campeao + self.pontos_vice + self.pontos_terceiro + self.pontos_quarto
+        # ATUALIZADO: Somando os pontos da fase de grupos no total do pódio
+        return (self.pontos_campeao + self.pontos_vice + 
+                self.pontos_terceiro + self.pontos_quarto + 
+                self.pontos_fase_grupos + self.pontos_confrontos)
 
     def __str__(self):
         return f"Pódio de {self.usuario.username}: 1. {self.campeao} | 2. {self.vice}"
