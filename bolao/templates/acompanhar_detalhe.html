@@ -159,6 +159,10 @@
                                     {% for palpite in fase.list %}
                                     <div class="placar-linha">
                                         <div class="time casa d-flex align-items-center justify-content-end gap-2">
+                                            {% if palpite.fase != 'GRUPOS' and palpite.gols_casa == palpite.gols_vis and palpite.vencedor_confronto_id == palpite.id_casa_puro %}
+                                                <span class="badge bg-success" style="font-size: 0.7rem; vertical-align: middle;">🏆 Passa</span>
+                                            {% endif %}
+
                                             {{ palpite.time_casa }}
                                             {% if palpite.img_casa %}
                                                 <img src="{{ palpite.img_casa }}" width="25" class="border rounded-1 shadow-sm">
@@ -174,6 +178,10 @@
                                                 <img src="{{ palpite.img_vis }}" width="25" class="border rounded-1 shadow-sm">
                                             {% endif %}
                                             {{ palpite.time_vis }}
+
+                                            {% if palpite.fase != 'GRUPOS' and palpite.gols_casa == palpite.gols_vis and palpite.vencedor_confronto_id == palpite.id_vis_puro %}
+                                                <span class="badge bg-success" style="font-size: 0.7rem; vertical-align: middle;">🏆 Passa</span>
+                                            {% endif %}
                                         </div>
                                     </div>
                                     {% endfor %}
