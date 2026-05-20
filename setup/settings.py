@@ -123,7 +123,7 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Quando logar, vai pro ranking
-LOGIN_REDIRECT_URL = 'ranking'
+# Quando acessar, vai direto pra pagina de login
+LOGIN_REDIRECT_URL = 'login' 
 # Quando deslogar, vai pra tela de login
 LOGOUT_REDIRECT_URL = 'login'
