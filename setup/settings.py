@@ -104,12 +104,14 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'pt-br'
 
-TIME_ZONE = 'UTC'
+# FUSO DE SÃO PAULO/BRASÍLIA
+TIME_ZONE = 'America/Sao_Paulo'
 
 USE_I18N = True
 
+# Garanta que o USE_TZ esteja como True
 USE_TZ = True
 
 
@@ -125,5 +127,18 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Quando acessar, vai direto pra pagina de login
 LOGIN_REDIRECT_URL = 'login' 
-# Quando deslogar, vai pra tela de login
+
+# Redireciona para Ranking apos login
+LOGIN_REDIRECT_URL = 'ranking'
+
+# Para onde o usuário VAI após clicar em "Sair" (Logout)
 LOGOUT_REDIRECT_URL = 'login'
+
+
+# Configuração para envio de e-mails (Exemplo usando Gmail)
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'jogospdr@gmail.com' # Coloque seu e-mail aqui
+EMAIL_HOST_PASSWORD = 'jrbp qqzk rcul bbkb' # ATENÇÃO: Use uma "Senha de App" do Google, não a sua senha normal!
