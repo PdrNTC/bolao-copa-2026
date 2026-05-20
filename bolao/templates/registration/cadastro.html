@@ -12,8 +12,6 @@
 
     <style>
       body {
-        /* Mesma imagem de fundo do login */
-        /* ATENÇÃO: Verifique se o caminho da imagem está igual ao que você usou no login.html */
         background-image: url("{% static 'imgs/img_copa_fundo_login.png' %}"); 
         background-size: cover;
         background-position: center;
@@ -27,7 +25,6 @@
         background-color: #f0f2f5;
       }
 
-      /* Card semi-transparente igual ao login */
       .cadastro-card {
         background-color: rgba(255, 255, 255, 0.92);
         border: none;
@@ -42,44 +39,33 @@
         <form method="post">
             {% csrf_token %}
             
-            {% if form.errors %}
-                <div class="alert alert-danger py-2" style="font-size: 0.9rem;">
-                    <strong>Ops! Verifique os erros:</strong>
-                    <ul class="mb-0 mt-1 ps-3">
-                        {% for field in form %}
-                            {% for error in field.errors %}
-                                <li>{{ error }}</li>
-                            {% endfor %}
-                        {% endfor %}
-                        {% for error in form.non_field_errors %}
-                            <li>{{ error }}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-danger py-2 mb-3" style="font-size: 0.9rem;">
+                        <strong>Ops!</strong> {{ message }}
+                    </div>
+                {% endfor %}
             {% endif %}
 
-            {% for field in form %}
-                <div class="mb-3">
-                    <label class="form-label">
-                        {% if field.name == 'username' %}
-                            Usuário
-                        {% elif field.name == 'password' or field.name == 'password1' %}
-                            Senha
-                        {% elif 'password' in field.name or '2' in field.name or 'confirm' in field.name|lower %}
-                            Confirmar Senha
-                        {% else %}
-                            {{ field.label }}
-                        {% endif %}
-                    </label>
-                    
-                    <input type="{{ field.field.widget.input_type }}" 
-                           name="{{ field.name }}" 
-                           class="form-control {% if field.errors %}is-invalid{% endif %}"
-                           id="{{ field.id_for_label }}"
-                           required>
-                    
-                    </div>
-            {% endfor %}
+            <div class="mb-3">
+                <label class="form-label" style="font-weight: 500;">Usuário</label>
+                <input type="text" name="username" class="form-control" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" style="font-weight: 500;">E-mail</label>
+                <input type="email" name="email" class="form-control" required>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label" style="font-weight: 500;">Senha</label>
+                <input type="password" name="password" class="form-control" required>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label" style="font-weight: 500;">Confirmar Senha</label>
+                <input type="password" name="confirm_password" class="form-control" required>
+            </div>
             
             <button type="submit" class="btn w-100 mt-3 p-2 fw-bold shadow-sm text-white" style="background-color: #044A80; border: none;">
                 Cadastrar

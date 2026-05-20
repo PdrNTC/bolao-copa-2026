@@ -45,6 +45,12 @@
         
         <form method="post">
             {% csrf_token %}
+
+            {% if form.errors %}
+                <div class="alert alert-danger mb-3" role="alert" style="font-size: 0.95rem;">
+                    Usuário ou senha incorretos. Por favor, tente novamente.
+                </div>
+            {% endif %}
             <div class="mb-3">
                 <label class="form-label" style="font-weight: 500;">Usuário</label>
                 <input type="text" name="username" class="form-control" required>
@@ -55,6 +61,11 @@
             </div>
 
             <button type="submit" class="btn btn-primary w-100 p-2" style="background-color: #044A80; border: none;">Entrar</button>
+
+            <div class="text-center mt-3">
+              <a href="{% url 'password_reset' %}" style="text-decoration: none; color: #044A80;">Esqueceu sua senha?</a>
+            </div>
+
         </form>
         
         <hr>
