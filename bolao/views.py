@@ -13,6 +13,7 @@ from .utils import resolver_partida_mata_mata, simular_caminho_usuario
 
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
+from django.contrib import messages  # Importante para exibir os erros na tela
 
 # --- RANKING ATUALIZADO --- #
 @login_required # Adicionando Login obrigatorio #
@@ -56,6 +57,16 @@ def ranking(request):
 # --- PALPITES MATA-MATA INTELIGENTE ---
 @login_required
 def palpites_matamata(request):
+
+    # TRAVA ADICIONADA: Impede acesso se não terminou os 72 jogos de grupos
+    total_grupos = Partida.objects.filter(fase='GRUPOS').count()
+    meus_palpites_grupos = Palpite.objects.filter(usuario=request.user, partida__fase='GRUPOS').count()
+    
+    if meus_palpites_grupos < total_grupos:
+        messages.warning(request, "Você precisa preencher todos os palpites da Fase de Grupos antes de acessar o Mata-Mata!")
+        return redirect('palpites') # Ajuste para o 'name' da sua URL de grupos se for diferente
+
+
     fases_finais = ['16AVOS', 'OITAVAS', 'QUARTAS', 'SEMI', '3LUGAR', 'FINAL']
     
     if request.method == 'POST':
@@ -167,6 +178,16 @@ def gerenciar_etapa(request, fases_da_etapa, titulo_etapa, proxima_url, progress
     """
     Controla qualquer etapa do mata-mata: verifica bloqueio, salva, simula e redireciona.
     """
+
+    # TRAVA ADICIONADA: Se tentar burlar digitando a URL de qualquer fase, o sistema barra aqui
+    total_grupos = Partida.objects.filter(fase='GRUPOS').count()
+    meus_palpites_grupos = Palpite.objects.filter(usuario=request.user, partida__fase='GRUPOS').count()
+    
+    if meus_palpites_grupos < total_grupos:
+        messages.warning(request, "Você precisa preencher todos os palpites da Fase de Grupos antes de acessar o Mata-Mata!")
+        return redirect('palpites')
+
+
     # Verifica se essa etapa ESPECÍFICA já foi preenchida
     ja_preencheu_etapa = Palpite.objects.filter(
         usuario=request.user, 
@@ -251,13 +272,40 @@ def gerenciar_etapa(request, fases_da_etapa, titulo_etapa, proxima_url, progress
 
 def cadastro(request):
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('login')
-    else:
-        form = UserCreationForm()
-    return render(request, 'registration/cadastro.html', {'form': form})
+        # 1. Captura os dados exatamente como estão no 'name' dos inputs do HTML
+        usuario_txt = request.POST.get('username')
+        email_txt = request.POST.get('email')
+        senha_txt = request.POST.get('password')
+        confirma_senha_txt = request.POST.get('confirm_password')
+        
+        # 2. Validação: As senhas precisam ser iguais
+        if senha_txt != confirma_senha_txt:
+            messages.error(request, "As senhas não coincidem!")
+            return render(request, 'registration/cadastro.html')
+            
+        # 3. Validação: O nome de usuário deve ser único
+        if User.objects.filter(username=usuario_txt).exists():
+            messages.error(request, "Este nome de usuário já está em uso!")
+            return render(request, 'registration/cadastro.html')
+            
+        # 4. Validação: O e-mail deve ser único (evita duas contas com o mesmo e-mail)
+        if User.objects.filter(email=email_txt).exists():
+            messages.error(request, "Este e-mail já está cadastrado em outra conta!")
+            return render(request, 'registration/cadastro.html')
+            
+        # 5. Se passou em tudo, cria o usuário com segurança usando a criptografia do Django
+        user = User.objects.create_user(
+            username=usuario_txt,
+            email=email_txt,
+            password=senha_txt
+        )
+        user.save()
+        
+        # Redireciona o novo jogador para a tela de login
+        return redirect('login')
+        
+    # Se for uma requisição GET, apenas exibe a página limpa
+    return render(request, 'registration/cadastro.html')
 
 @login_required
 def palpites_extras(request):
@@ -352,8 +400,13 @@ def acompanhar_detalhe(request, usuario_id):
         else:
             tc, tv = resolver_partida_mata_mata(p.partida, classificados_jogador, jogador)
         
+        # ADICIONADO: Extrai os IDs reais para o HTML poder comparar
+        id_casa_real = tc.id if (tc and hasattr(tc, 'id')) else None
+        id_vis_real = tv.id if (tv and hasattr(tv, 'id')) else None
+
         palpites_processados.append({
-            'fase': p.partida.get_fase_display(),
+            'fase': p.partida.fase, # Enviando o código limpo da fase (ex: '16AVOS')
+            'fase_display': p.partida.get_fase_display(),
             'data': p.partida.data_jogo,
             'time_casa': tc.nome if tc else "Indefinido",
             'img_casa': tc.imagem if (tc and tc.imagem) else None,
@@ -361,6 +414,11 @@ def acompanhar_detalhe(request, usuario_id):
             'img_vis': tv.imagem if (tv and tv.imagem) else None,
             'gols_casa': p.palpite_casa,
             'gols_vis': p.palpite_visitante,
+            
+            # NOVAS CHAVES ADICIONADAS PARA O ESPIONAR:
+            'id_casa_puro': id_casa_real,
+            'id_vis_puro': id_vis_real,
+            'vencedor_confronto_id': p.vencedor_confronto_id
         })
 
     return render(request, 'acompanhar_detalhe.html', {

@@ -395,3 +395,18 @@ def calcular_pontos_podium_geral():
         podio_user.pontos_terceiro = pts_terceiro
         podio_user.pontos_quarto = pts_quarto
         podio_user.save()
+
+
+## FUNCAO QUE VALIDA SE O JOGADOR JA PREENCHEU TODOS OS JOGOS ##
+def verificar_fase_grupos_completa(user):
+    """
+    Retorna True se o usuário preencheu todos os 72 jogos da fase de grupos.
+    Retorna False caso falte algum jogo.
+    """
+    if not user.is_authenticated:
+        return False
+        
+    total_jogos_grupo = Partida.objects.filter(fase='GRUPOS').count() # Deve retornar 72
+    total_palpites_user = Palpite.objects.filter(usuario=user, partida__fase='GRUPOS').count()
+    
+    return total_palpites_user == total_jogos_grupo

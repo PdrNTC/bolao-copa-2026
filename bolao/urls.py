@@ -1,5 +1,6 @@
-from django.urls import path
+from django.urls import path, include
 from . import views
+from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     # Página inicial é o Ranking
@@ -20,4 +21,10 @@ urlpatterns = [
     # Novas rotas para Acompanhar Palpites
     path('acompanhar/', views.acompanhar_hub, name='acompanhar_hub'),
     path('acompanhar/<int:usuario_id>/', views.acompanhar_detalhe, name='acompanhar_detalhe'),
+
+    # ROTAS DE RECUPERAÇÃO DE SENHA #
+    path('recuperar-senha/', auth_views.PasswordResetView.as_view(template_name='registration/password_reset.html'), name='password_reset'),
+    path('recuperar-senha/enviado/', auth_views.PasswordResetDoneView.as_view(template_name='registration/password_reset_sent.html'), name='password_reset_done'),
+    path('recuperar-senha/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(template_name='registration/password_reset_confirm.html'), name='password_reset_confirm'),
+    path('recuperar-senha/concluido/', auth_views.PasswordResetCompleteView.as_view(template_name='registration/password_reset_complete.html'), name='password_reset_complete')
 ]
