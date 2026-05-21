@@ -3,81 +3,186 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Criar Conta - Bolão 2026</title>
+    <title>Criar Conta - Bolão Copa 2026</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
     {% load static %}
-
     <link rel="icon" type="image/png" href="{% static 'imgs/logo_copa_2026.png' %}">
 
     <style>
+      /* --- BACKDROP LOGIC (COERÊNCIA VISUAL DE FLUXO) --- */
       body {
-        background-image: url("{% static 'imgs/img_copa_fundo_login.png' %}"); 
+        background-image: url("{% static 'imgs/img_copa_fundo_login.png' %}");
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
         background-attachment: fixed;
-        
+        background-color: #00122b; 
         height: 100vh;
+        margin: 0;
         display: flex;
         align-items: center;
         justify-content: center;
-        background-color: #f0f2f5;
+        position: relative;
+        overflow-x: hidden;
+        padding: 15px;
       }
 
-      .cadastro-card {
-        background-color: rgba(255, 255, 255, 0.92);
+      body::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 18, 43, 0.75);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        z-index: 1;
+      }
+
+      .auth-container {
+        position: relative;
+        z-index: 2;
+        width: 100%;
+        max-width: 440px;
+        background-color: #f8f9fa;
+        border-radius: 24px;
+        padding: 30px;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+      }
+
+      /* 📌 COMPONENTE: ABA DUPLA SUPERIOR DE ALTERNÂNCIA */
+      .segment-control {
+        background: #e9ecef;
+        padding: 6px;
+        border-radius: 16px;
+        display: flex;
+        margin-bottom: 30px;
+      }
+      .segment-control .btn-tab {
+        width: 50%;
         border: none;
-        border-radius: 15px;
+        padding: 10px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        border-radius: 12px;
+        transition: all 0.2s ease;
+        text-align: center;
+        text-decoration: none;
+      }
+      .segment-control .btn-tab.active {
+        background: #ffffff;
+        color: #00122b;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+      }
+      .segment-control .btn-tab.inactive {
+        background: transparent;
+        color: #6c757d;
+      }
+      .segment-control .btn-tab.inactive:hover {
+        color: #333;
+      }
+
+      .auth-title {
+        color: #00122b;
+        font-weight: 800;
+        font-size: 1.6rem;
+        letter-spacing: -0.5px;
+      }
+      .auth-subtitle {
+        color: #5c677d;
+        font-size: 0.9rem;
+        line-height: 1.4;
+      }
+
+      .form-label {
+        color: #00122b;
+        font-weight: 700;
+        font-size: 0.85rem;
+        margin-bottom: 6px;
+      }
+      .form-control {
+        border: 2px solid #dee2e6;
+        border-radius: 12px;
+        padding: 11px 12px;
+        font-weight: 600;
+        color: #00122b;
+        background-color: #fff;
+      }
+      .form-control:focus {
+        border-color: #0d6efd;
+        box-shadow: none;
+      }
+
+      .btn-submit {
+        background-color: #00875a;
+        color: #ffffff;
+        border: none;
+        border-radius: 14px;
+        padding: 14px;
+        font-weight: 700;
+        font-size: 1rem;
+        transition: background 0.2s;
+        box-shadow: 0 4px 12px rgba(0, 135, 90, 0.2);
+      }
+      .btn-submit:hover {
+        background-color: #00704a;
+        color: #ffffff;
       }
     </style>
   </head>
   <body>
-    <div class="card cadastro-card shadow p-4 p-md-5" style="width: 100%; max-width: 400px;">
-        <h3 class="text-center mb-4">Novo Jogador</h3>
-        
-        <form method="post">
-            {% csrf_token %}
-            
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-danger py-2 mb-3" style="font-size: 0.9rem;">
-                        <strong>Ops!</strong> {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
 
-            <div class="mb-3">
-                <label class="form-label" style="font-weight: 500;">Usuário</label>
-                <input type="text" name="username" class="form-control" required>
-            </div>
+    <main class="auth-container">
+      
+      <nav class="segment-control" aria-label="Navegação de Autenticação">
+        <a href="{% url 'login' %}" class="btn-tab inactive">Entrar</a>
+        <span class="btn-tab active">Criar conta</span>
+      </nav>
 
-            <div class="mb-3">
-                <label class="form-label" style="font-weight: 500;">E-mail</label>
-                <input type="email" name="email" class="form-control" required>
-            </div>
-            
-            <div class="mb-3">
-                <label class="form-label" style="font-weight: 500;">Senha</label>
-                <input type="password" name="password" class="form-control" required>
-            </div>
-            
-            <div class="mb-3">
-                <label class="form-label" style="font-weight: 500;">Confirmar Senha</label>
-                <input type="password" name="confirm_password" class="form-control" required>
-            </div>
-            
-            <button type="submit" class="btn w-100 mt-3 p-2 fw-bold shadow-sm text-white" style="background-color: #044A80; border: none;">
-                Cadastrar
-            </button>
-        </form>
-        
-        <hr class="mt-4">
-        
-        <div class="text-center mt-2">
-            <p class="mb-2 text-muted">Já possui uma conta?</p>
-            <a href="{% url 'login' %}" class="btn btn-outline-primary btn-sm px-4">Fazer Login</a>
-        </div>
-    </div>
+      <div class="mb-4">
+        <h1 class="auth-title mb-1">Novo jogador</h1>
+        <p class="auth-subtitle mb-0">Crie sua conta para acessar a plataforma e começar a jogar.</p>
+      </div>
+      
+      <form method="post">
+          {% csrf_token %}
+          
+          {% if messages %}
+              {% for message in messages %}
+                  <div class="alert alert-danger p-3 mb-3 border-0 small fw-bold" style="border-radius: 10px; background-color: #f8d7da; color: #842029;">
+                      <strong>Ops!</strong> {{ message }}
+                  </div>
+              {% endfor %}
+          {% endif %}
+
+          <div class="mb-2">
+              <label class="form-label">Nome de usuário</label>
+              <input type="text" name="username" class="form-control" placeholder="Ex: silva26" required autocomplete="username">
+          </div>
+
+          <div class="mb-2">
+              <label class="form-label">E-mail</label>
+              <input type="email" name="email" class="form-control" placeholder="voce@email.com" required autocomplete="email">
+          </div>
+          
+          <div class="mb-2">
+              <label class="form-label">Senha</label>
+              <input type="password" name="password" class="form-control" placeholder="Mínimo 8 caracteres" required autocomplete="new-password">
+          </div>
+          
+          <div class="mb-4">
+              <label class="form-label">Confirmar senha</label>
+              <input type="password" name="confirm_password" class="form-control" placeholder="Repita a senha" required autocomplete="new-password">
+          </div>
+          
+          <button type="submit" class="btn btn-submit w-100 shadow-sm">
+              Criar conta e entrar
+          </button>
+      </form>
+      
+    </main>
+
   </body>
 </html>
