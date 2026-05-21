@@ -1,193 +1,205 @@
-<!doctype html>
-<html lang="pt-br">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Ranking - Copa do Mundo 2026</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    {% load static %}
+{% extends 'base.html' %}
+{% load static %}
 
-    <link rel="icon" type="image/png" href="{% static 'imgs/logo_copa_2026.png' %}">
+{% block title %}Classificação Geral - Bolão Copa 2026{% endblock %}
 
-    <style>
-      /* Fundo azul escuro inspirado no site da FIFA */
-      body { 
-        background-color: #00122b; 
-        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      }
-      
-      /* Navbar preta */
-      .navbar-custom {
-        background-color: #000000;
-        border-bottom: 3px solid #0d6efd; /* Linha azul sutil para destaque */
-      }
-
-      .navbar-brand {
-        font-weight: 800;
+{% block extra_css %}
+<style>
+    /* --- CARDS DE DESTAQUE (HERO STATS) --- */
+    .stat-box {
+        background: #061e3d;
+        border-radius: 16px;
+        padding: 15px 20px;
+        border: 1px solid rgba(255,255,255,0.05);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .stat-info .stat-title {
+        font-size: 0.8rem;
+        text-transform: uppercase;
         letter-spacing: 0.5px;
-        font-size: 1.1rem;
-      }
-
-      /* Card do Ranking branco com sombras */
-      .card-ranking { 
-        margin-top: 50px; 
-        border: none; 
-        border-radius: 15px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-        background-color: #ffffff;
-      }
-      
-      .ranking-title {
-        color: #00122b;
+        color: #8da2bb;
+        font-weight: 700;
+        margin-bottom: 4px;
+    }
+    .stat-info .stat-value {
+        font-size: 1.35rem;
         font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-      }
+        line-height: 1.2;
+    }
+    .stat-icon {
+        font-size: 1.8rem;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 5px 12px;
+        border-radius: 12px;
+    }
 
-      /* Estilização da Tabela */
-      .table {
-        margin-top: 20px;
+    /* --- CONTAINER DA TABELA DE RANKING --- */
+    .ranking-container {
+        background: #061e3d;
+        border-radius: 16px;
+        padding: 20px;
+        border: 1px solid rgba(255,255,255,0.05);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+
+    .table {
+        margin-top: 10px;
         border-collapse: separate;
-        border-spacing: 0 5px; /* Dá um espacinho entre as linhas */
-      }
+        border-spacing: 0 8px; /* Espaço entre as linhas estilo card */
+    }
 
-      .table thead th {
+    .table thead th {
         border-bottom: none;
-        color: #6c757d;
+        color: #8da2bb;
         text-transform: uppercase;
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         letter-spacing: 1px;
-      }
+        font-weight: 700;
+        padding-bottom: 12px;
+    }
 
-      .table tbody tr td {
+    .table tbody tr td {
         vertical-align: middle;
         border: none;
-        border-top: 1px solid transparent;
-        border-bottom: 1px solid transparent;
-      }
+        padding: 14px 10px;
+    }
 
-      /* Cores das posições de pódio com gradientes suaves */
-      .posicao-1 td { 
+    /* --- LINHAS DA TABELA EM ESTILO CARD --- */
+    .table tbody tr {
+        box-shadow: 0 4px 6px rgba(0,0,0,0.08);
+        transition: transform 0.2s;
+    }
+    .table tbody tr:hover {
+        transform: scale(1.005);
+    }
+
+    /* Linhas comuns de competidores */
+    .table tbody tr:not(.posicao-1):not(.posicao-2):not(.posicao-3) td {
+        background-color: #0b2547;
+        color: #fff;
+    }
+    .table tbody tr:not(.posicao-1):not(.posicao-2):not(.posicao-3) td:first-child { border-radius: 12px 0 0 12px; }
+    .table tbody tr:not(.posicao-1):not(.posicao-2):not(.posicao-3) td:last-child { border-radius: 0 12px 12px 0; }
+
+    /* 🥇 1º Lugar (Ouro) */
+    .posicao-1 td { 
         background: linear-gradient(135deg, #fff3cd 0%, #ffdf7e 100%) !important; 
         font-weight: 800; 
         color: #856404;
-      }
-      .posicao-1 td:first-child { border-radius: 10px 0 0 10px; }
-      .posicao-1 td:last-child { border-radius: 0 10px 10px 0; }
+    }
+    .posicao-1 td:first-child { border-radius: 12px 0 0 12px; }
+    .posicao-1 td:last-child { border-radius: 0 12px 12px 0; }
 
-      .posicao-2 td { 
+    /* 🥈 2º Lugar (Prata) */
+    .posicao-2 td { 
         background: linear-gradient(135deg, #f8f9fa 0%, #e2e3e5 100%) !important; 
         font-weight: 700; 
         color: #383d41;
-      }
-      .posicao-2 td:first-child { border-radius: 10px 0 0 10px; }
-      .posicao-2 td:last-child { border-radius: 0 10px 10px 0; }
+    }
+    .posicao-2 td:first-child { border-radius: 12px 0 0 12px; }
+    .posicao-2 td:last-child { border-radius: 0 12px 12px 0; }
 
-      .posicao-3 td { 
+    /* 🥉 3º Lugar (Bronze) */
+    .posicao-3 td { 
         background: linear-gradient(135deg, #f4e3d7 0%, #e8ba9e 100%) !important; 
         font-weight: 700; 
         color: #854015;
-      }
-      .posicao-3 td:first-child { border-radius: 10px 0 0 10px; }
-      .posicao-3 td:last-child { border-radius: 0 10px 10px 0; }
-      
-      /* Demais linhas */
-      .table tbody tr:not(.posicao-1):not(.posicao-2):not(.posicao-3):hover td {
-        background-color: #f8f9fa;
-      }
-      .table tbody tr:not(.posicao-1):not(.posicao-2):not(.posicao-3) td {
-        background-color: #ffffff;
-        border-bottom: 1px solid #eee;
-      }
+    }
+    .posicao-3 td:first-child { border-radius: 12px 0 0 12px; }
+    .posicao-3 td:last-child { border-radius: 0 12px 12px 0; }
 
-    </style>
-  </head>
-  <body>
+    /* Ajustes Finos para Mobile */
+    @media (max-width: 576px) {
+        .stat-info .stat-value { font-size: 1.15rem; }
+        .table tbody tr td { padding: 10px 6px; font-size: 0.9rem; }
+        .ranking-container { padding: 12px; }
+    }
+</style>
+{% endblock %}
 
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom py-3 shadow-sm">
-      <div class="container">
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-md-10">
         
-        <a class="navbar-brand d-flex align-items-center" href="#">
-          <img src="{% static 'imgs/logo_copa_2026.png' %}" alt="Logo FIFA 2026" height="40" class="me-3">
-          COPA DO MUNDO DA FIFA 2026™
-        </a>
-
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <div class="navbar-nav ms-4">
-                <a class="nav-link active fw-bold" href="{% url 'ranking' %}">Classificação</a>
-                <a class="nav-link" href="{% url 'palpites' %}">Jogos</a>
-                <a class="nav-link" href="{% url 'etapa_16avos' %}">Mata-Mata</a>
-                <a class="nav-link" href="{% url 'palpites_extras' %}">Apostas Bônus</a>
-                <a class="nav-link" href="{% url 'acompanhar_hub' %}">Acompanhar Palpites</a>
+        <div class="row g-3 mb-4">
+            <div class="col-6">
+                <div class="stat-box">
+                    <div class="stat-info">
+                        <div class="stat-title">🥇 Líder Atual</div>
+                        <div class="stat-value text-truncate" style="max-width: 140px;">
+                            {% if usuarios %}{{ usuarios.0.username }}{% else %}Nenhum{% endif %}
+                        </div>
+                        <small class="opacity-75" style="font-size: 0.75rem;">
+                            {% if usuarios %}{{ usuarios.0.total_pontos }} Pontos{% endif %}
+                        </small>
+                    </div>
+                    <div class="stat-icon">🏆</div>
+                </div>
             </div>
             
-            <span class="navbar-text text-white ms-auto d-flex align-items-center">
-                <span class="me-3 opacity-75">Olá, <strong>{{ user.username }}</strong></span>
-                <form action="{% url 'logout' %}" method="post" class="m-0 p-0">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-sm btn-outline-light rounded-pill px-3 fw-bold">Sair</button>
-                </form>
-            </span>
+            <div class="col-6">
+                <div class="stat-box">
+                    <div class="stat-info">
+                        <div class="stat-title">👥 Jogadores</div>
+                        <div class="stat-value">{{ usuarios|length }}</div>
+                        <small class="opacity-75" style="font-size: 0.75rem;">Apostadores Ativos</small>
+                    </div>
+                    <div class="stat-icon">⚽</div>
+                </div>
+            </div>
         </div>
 
-      </div>
-    </nav>
-
-    <div class="container pb-5">
-      <div class="row justify-content-center">
-        <div class="col-lg-8 col-md-10">
-          
-          <div class="card card-ranking p-4 p-md-5">
-            <div class="text-center mb-4">
-                <h2 class="ranking-title mb-1">Tabela de Classificação</h2>
-                <p class="text-muted">Acompanhe quem está liderando o bolão!</p>
+        <div class="ranking-container">
+            <div class="text-center mb-4 mt-2">
+                <h3 class="fw-bold mb-1" style="letter-spacing: 0.5px;">🏆 Tabela de Classificação</h3>
+                <p class="text-muted small mb-0">Pontuação atualizada em tempo real</p>
             </div>
             
             <div class="table-responsive">
                 <table class="table text-center align-middle">
-                  <thead>
-                    <tr>
-                      <th scope="col" width="15%">Posição</th>
-                      <th scope="col" class="text-start">Jogador</th>
-                      <th scope="col" width="25%">Pontuação</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for usuario in usuarios %}
-                    <tr class="{% if forloop.counter == 1 %}posicao-1{% elif forloop.counter == 2 %}posicao-2{% elif forloop.counter == 3 %}posicao-3{% endif %} shadow-sm">
-                      
-                      <td class="fs-5">
-                          {% if forloop.counter == 1 %}🥇{% endif %}
-                          {% if forloop.counter == 2 %}🥈{% endif %}
-                          {% if forloop.counter == 3 %}🥉{% endif %}
-                          {% if forloop.counter > 3 %}{{ forloop.counter }}º{% endif %}
-                      </td> 
-                      
-                      <td class="text-start fs-5">{{ usuario.username }}</td>
-                      
-                      <td class="fs-5 fw-bold">{{ usuario.total_pontos }} <span class="fs-6 fw-normal opacity-75">Pts</span></td>
-                      
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="3" class="text-muted py-4">Nenhum jogador pontuou ainda.</td>
-                    </tr>
-                    {% endfor %}
-                  </tbody>
+                    <thead>
+                        <tr>
+                            <th scope="col" width="20%">Posição</th>
+                            <th scope="col" class="text-start">Jogador</th>
+                            <th scope="col" width="25%">Pontos</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for usuario in usuarios %}
+                        <tr class="{% if forloop.counter == 1 %}posicao-1{% elif forloop.counter == 2 %}posicao-2{% elif forloop.counter == 3 %}posicao-3{% endif %}">
+                            
+                            <td class="fs-5">
+                                {% if forloop.counter == 1 %}🥇{% endif %}
+                                {% if forloop.counter == 2 %}🥈{% endif %}
+                                {% if forloop.counter == 3 %}🥉{% endif %}
+                                {% if forloop.counter > 3 %}{{ forloop.counter }}º{% endif %}
+                            </td> 
+                            
+                            <td class="text-start fs-6 fw-bold">
+                                {{ usuario.username }}
+                                {% if usuario.username == user.username %}
+                                    <span class="badge bg-dark text-white ms-1" style="font-size: 0.65rem; vertical-align: middle;">Você</span>
+                                {% endif %}
+                            </td>
+                            
+                            <td class="fs-5 fw-extrabold">
+                                {{ usuario.total_pontos }} <span class="fs-7 fw-normal opacity-75">pts</span>
+                            </td>
+                            
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-muted py-4">Nenhum jogador pontuou ainda.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
                 </table>
             </div>
-
-          </div>
-
         </div>
-      </div>
-    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  </body>
-</html>
+    </div>
+</div>
+{% endblock %}

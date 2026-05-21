@@ -1,167 +1,178 @@
-<!doctype html>
-<html lang="pt-br">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Fase de Grupos - Bolão 2026</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    {% load static %}
+{% extends 'base.html' %}
+{% load static %}
 
-    <link rel="icon" type="image/png" href="{% static 'imgs/logo_copa_2026.png' %}">
+{% block title %}Jogos da Fase de Grupos - Bolão 2026{% endblock %}
 
-    <style>
-        body { 
-            background-color: #00122b; 
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        }
+{% block extra_css %}
+<style>
+    .group-panel {
+        background: #061e3d;
+        border-radius: 16px;
+        margin-bottom: 20px;
+        border: 1px solid rgba(255,255,255,0.05);
+        overflow: hidden;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    }
+    .group-head {
+        width: 100%;
+        background: #0a2952;
+        border: none;
+        padding: 15px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: #fff;
+        text-align: left;
+    }
+    .group-title {
+        font-weight: 800;
+        font-size: 1.1rem;
+        color: #00a2ff;
+        text-transform: uppercase;
+    }
+    .group-meta {
+        font-size: 0.85rem;
+        opacity: 0.8;
+        background: rgba(255,255,255,0.1);
+        padding: 4px 10px;
+        border-radius: 20px;
+    }
+    .group-panel[data-open="false"] .group-body { display: none; }
+    .group-body { padding: 15px; }
+    .match-card {
+        background: #ffffff;
+        color: #212529;
+        border-radius: 14px;
+        padding: 12px 15px;
+        margin-bottom: 12px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .match-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.78rem;
+        color: #6c757d;
+        font-weight: 600;
+        margin-bottom: 10px;
+        border-bottom: 1px solid #f1f3f5;
+        padding-bottom: 6px;
+    }
+    .match-main { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .team { display: flex; align-items: center; width: 38%; font-size: 0.95rem; font-weight: 700; }
+    .team.casa { justify-content: flex-end; text-align: right; }
+    .team.vis { justify-content: flex-start; text-align: left; }
+    .score-input {
+        width: 50px;
+        height: 42px;
+        text-align: center;
+        font-size: 1.3rem;
+        font-weight: 800;
+        border-radius: 8px;
+        border: 2px solid #dee2e6;
+        background: #f8f9fa;
+    }
+    .versus { font-weight: 800; color: #adb5bd; }
+    @media (max-width: 576px) {
+        .team-name { font-size: 0.85rem; }
+        .score-input { width: 45px; height: 38px; font-size: 1.15rem; }
+    }
+</style>
+{% endblock %}
+
+{% block header_actions %}
+    {% if not ja_palpitou %}
+        <button type="submit" form="form-palpites" class="save-btn">Salvar</button>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
         
-        .navbar-custom {
-            background-color: #000000;
-            border-bottom: 3px solid #0d6efd;
-        }
-
-        .navbar-brand {
-            font-weight: 800;
-            letter-spacing: 0.5px;
-            font-size: 1.1rem;
-        }
-
-        .card-jogo { 
-            border: none; 
-            border-radius: 12px; 
-            margin-bottom: 20px; 
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3); 
-        }
-        .data-header { font-size: 0.85rem; color: #fff; background: #343a40; padding: 8px 15px; border-bottom: 1px solid #eee; border-radius: 12px 12px 0 0; }
-        .time-nome { font-weight: 600; font-size: 1.1rem; width: 35%; text-align: center; }
-        .input-placar { width: 60px; height: 50px; text-align: center; font-size: 1.4rem; font-weight: bold; border-radius: 8px; border: 2px solid #dee2e6; }
-        .input-placar:focus { border-color: #0d6efd; box-shadow: none; }
-        .input-placar:disabled { background-color: #e9ecef; color: #495057; border-color: #ced4da; }
-        .x-div { font-weight: bold; color: #adb5bd; margin: 0 10px; font-size: 1.2rem; }
-    </style>
-  </head>
-  <body>
-
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom py-3 shadow-sm mb-4">
-      <div class="container">
-        <a class="navbar-brand d-flex align-items-center" href="#">
-          <img src="{% static 'imgs/logo_copa_2026.png' %}" alt="Logo FIFA 2026" height="40" class="me-3">
-          COPA DO MUNDO DA FIFA 2026™
-        </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <div class="navbar-nav ms-4">
-                <a class="nav-link" href="{% url 'ranking' %}">Classificação</a>
-                <a class="nav-link active fw-bold" href="{% url 'palpites' %}">Jogos</a>
-                <a class="nav-link" href="{% url 'etapa_16avos' %}">Mata-Mata</a>
-                <a class="nav-link" href="{% url 'palpites_extras' %}">Apostas Bônus</a>
-                <a class="nav-link" href="{% url 'acompanhar_hub' %}">Acompanhar Palpites</a>
-            </div>
-            <span class="navbar-text text-white ms-auto d-flex align-items-center">
-                <span class="me-3 opacity-75">Olá, <strong>{{ user.username }}</strong></span>
-                <form action="{% url 'logout' %}" method="post" class="m-0 p-0">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-sm btn-outline-light rounded-pill px-3 fw-bold">Sair</button>
-                </form>
-            </span>
-        </div>
-      </div>
-    </nav>
-
-    <div class="container pb-5">
-        
-        <div class="text-center mb-4 text-white">
-            <h2 class="fw-bold">Faça seus Palpites</h2>
-
+        <div class="text-center mb-4">
+            <h2 class="fw-bold">Fase de Grupos</h2>
+            
             {% if messages %}
-                <div class="d-flex justify-content-center w-100 mb-4">
-                    <div style="width: 100%; max-width: 730px;">
-                        {% for message in messages %}
-                            <div class="alert alert-warning alert-dismissible fade show border-0 shadow" role="alert" 
-                                style="background-color: #fff3cd; color: #664d03; border-left: 6px solid #ffc107 !important; border-radius: 12px; padding: 15px 20px;">
-                                
-                                <div class="d-flex align-items-center">
-                                    <span class="me-3" style="font-size: 1.4rem;">⚠️</span>
-                                    <div style="font-size: 0.95rem; font-weight: 500; line-height: 1.4;">
-                                        {{ message }}
-                                    </div>
-                                </div>
-                                
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="padding: 1.25rem;"></button>
-                            </div>
-                        {% endfor %}
+                {% for message in messages %}
+                    <div class="alert alert-warning alert-dismissible fade show border-0 shadow text-start" role="alert" style="background-color: #fff3cd; color: #664d03; border-left: 6px solid #ffc107 !important; border-radius: 12px;">
+                        <div class="d-flex align-items-center">
+                            <span class="me-3" style="font-size: 1.4rem;">⚠️</span>
+                            <div>{{ message }}</div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
-                </div>
+                {% endfor %}
             {% endif %}
-
 
             {% if ja_palpitou %}
-                <div class="alert alert-success mt-3 shadow-sm text-dark mx-auto" style="max-width: 600px;">
-                    ✅ <strong>Palpites Realizados!</strong><br>
-                    Seus jogos da fase de grupos estão salvos. O sistema já gerou seus confrontos de Mata-Mata automaticamente.
-                    <br><a href="{% url 'etapa_16avos' %}" class="btn btn-sm btn-success mt-3 fw-bold px-4 py-2 shadow">IR PARA MATA-MATA ➡️</a>
+                <div class="alert alert-success shadow-sm text-dark">
+                    ✅ <strong>Palpites Salvos!</strong> O sistema já gerou seu Mata-Mata.
+                    <br><a href="{% url 'etapa_16avos' %}" class="btn btn-sm btn-success mt-2 fw-bold px-4">IR PARA MATA-MATA ➡️</a>
                 </div>
-            {% else %}
-                <p class="text-light opacity-75 fs-5">Preencha todos os jogos da primeira fase. <strong>Atenção:</strong> Você só poderá salvar uma vez!</p>
             {% endif %}
         </div>
 
-        <form method="POST">
+        <form method="POST" id="form-palpites">
             {% csrf_token %}
             
-            <div class="row justify-content-center">
-                <div class="col-lg-8">
-                    {% for item in lista_jogos %}
-                    <div class="card card-jogo">
-                        <div class="data-header d-flex justify-content-between">
-                            <span>{{ item.partida.data_jogo|date:"d/m/Y - H:i" }} | <span class="text-info">{{ item.partida.get_fase_display }}</span></span>
-                            <span class="badge bg-light text-dark border align-self-center">Grupo {{ item.partida.time_casa.grupo }}</span>
+            {% regroup lista_jogos by partida.time_casa.grupo as grupo_list %}
+
+            {% for grupo in grupo_list %}
+            <article class="content-card group-panel" data-open="{% if forloop.first %}true{% else %}false{% endif %}">
+                <button type="button" class="group-head" data-group-toggle>
+                    <span class="group-title">Grupo {{ grupo.grouper }}</span>
+                    <span class="group-meta">Chave Completa</span>
+                </button>
+                
+                <div class="group-body">
+                    {% for item in grupo.list %}
+                    <div class="match-card">
+                        <div class="match-meta">
+                            <span>{{ item.partida.data_jogo|date:"d/m/Y - H:i" }}</span>
+                            <span class="text-primary fw-bold">Grupo {{ grupo.grouper }}</span>
                         </div>
-                        <div class="card-body d-flex align-items-center justify-content-between py-4">
+                        <div class="match-main">
                             
-                            <div class="time-nome d-flex align-items-center justify-content-end gap-2">
-                                <span>{{ item.partida.time_casa.nome }}</span>
+                            <div class="team casa">
+                                <span class="team-name text-dark">{{ item.partida.time_casa.nome }}</span>
                                 {% if item.partida.time_casa.imagem %}
-                                    <img src="{{ item.partida.time_casa.imagem }}" width="30" class="border rounded shadow-sm">
+                                    <img src="{{ item.partida.time_casa.imagem }}" width="24" class="ms-2 rounded-1 border">
                                 {% endif %}
                             </div>
 
-                            <div class="d-flex align-items-center">
-                                <input type="number" class="form-control input-placar" name="gols_casa_{{ item.partida.id }}" value="{{ item.palpite_casa }}" min="0" required {% if ja_palpitou %}disabled{% endif %}>
-                                <span class="x-div">X</span>
-                                <input type="number" class="form-control input-placar" name="gols_vis_{{ item.partida.id }}" value="{{ item.palpite_vis }}" min="0" required {% if ja_palpitou %}disabled{% endif %}>
-                            </div>
+                            <input type="number" class="score-input" name="gols_casa_{{ item.partida.id }}" value="{{ item.palpite_casa }}" min="0" required {% if ja_palpitou %}disabled{% endif %}>
+                            <div class="versus">x</div>
+                            <input type="number" class="score-input" name="gols_vis_{{ item.partida.id }}" value="{{ item.palpite_vis }}" min="0" required {% if ja_palpitou %}disabled{% endif %}>
 
-                            <div class="time-nome d-flex align-items-center justify-content-start gap-2">
+                            <div class="team vis">
                                 {% if item.partida.time_visitante.imagem %}
-                                    <img src="{{ item.partida.time_visitante.imagem }}" width="30" class="border rounded shadow-sm">
+                                    <img src="{{ item.partida.time_visitante.imagem }}" width="24" class="me-2 rounded-1 border">
                                 {% endif %}
-                                <span>{{ item.partida.time_visitante.nome }}</span>
+                                <span class="team-name text-dark">{{ item.partida.time_visitante.nome }}</span>
                             </div>
 
                         </div>
                     </div>
                     {% endfor %}
                 </div>
-            </div>
-
-            {% if not ja_palpitou %}
-            <div class="text-center mt-4 mb-5">
-                <div class="alert alert-warning d-inline-block fw-bold shadow">
-                    ⚠️ Confira tudo antes de salvar. Não será possível editar depois.
-                </div>
-                <br>
-                <button type="submit" class="btn btn-primary btn-lg px-5 py-3 fw-bold shadow mt-2">
-                    SALVAR PALPITES DEFINITIVOS
-                </button>
-            </div>
-            {% endif %}
-
+            </article>
+            {% endfor %}
         </form>
+
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  </body>
-</html>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        document.querySelectorAll("[data-group-toggle]").forEach((button) => {
+            button.addEventListener("click", () => {
+                const panel = button.closest(".group-panel");
+                const isOpen = panel.getAttribute("data-open") === "true";
+                panel.setAttribute("data-open", isOpen ? "false" : "true");
+            });
+        });
+    });
+</script>
+{% endblock %}

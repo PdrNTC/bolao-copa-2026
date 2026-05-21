@@ -1,140 +1,211 @@
-<!doctype html>
-<html lang="pt-br">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Meu Pódio - Bolão 2026</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Meu Pódio - Bolão Copa 2026{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* --- ESTILIZAÇÃO DO PÓDIO MODERNO --- */
+    .podium-card {
+        border: none;
+        border-radius: 18px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+        overflow: hidden;
+        position: relative;
+    }
+    .podium-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+    }
+
+    /* Cores Gradientes Polidas */
+    .card-ouro {
+        background: linear-gradient(135deg, #ffd700 0%, #fdb931 100%);
+        color: #00122b;
+        border: 1px solid rgba(255, 215, 0, 0.4);
+    }
+    .card-prata {
+        background: linear-gradient(135deg, #e6e6e6 0%, #b8b8b8 100%);
+        color: #00122b;
+        border: 1px solid rgba(230, 230, 230, 0.3);
+    }
+    .card-bronze {
+        background: linear-gradient(135deg, #df8f49 0%, #a85a24 100%);
+        color: #fff;
+        border: 1px solid rgba(223, 143, 73, 0.3);
+    }
+    .card-quarto {
+        background: #061e3d;
+        border: 2px dashed rgba(255,255,255,0.15);
+        color: #fff;
+    }
+
+    /* 🟢 CORREÇÃO: Força uma cor clara e legível no subtítulo do card do 4º colocado */
+    .card-quarto-label {
+        color: #8da2bb !important;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+    }
+
+    .medalha-icon {
+        font-size: 3.8rem;
+        margin-bottom: 8px;
+        display: block;
+        filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.25));
+    }
+    .time-nome {
+        font-size: 1.6rem;
+        font-weight: 900;
+        margin: 12px 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
     
-    {% load static %}
+    /* 🟢 NOVA CLASSE: Estilização para as bandeiras do pódio */
+    .podium-flag {
+        width: 32px;
+        height: 22px;
+        object-fit: cover;
+        border-radius: 4px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .pontos-badge {
+        background-color: rgba(0, 0, 0, 0.12);
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: inline-block;
+    }
+    .card-bronze .pontos-badge {
+        background-color: rgba(255, 255, 255, 0.15);
+    }
+
+    /* Alerta Customizado se estiver indefinido */
+    .alert-podium-empty {
+        background-color: #061e3d;
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 16px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+
+    @media (max-width: 768px) {
+        .time-nome { font-size: 1.35rem; }
+        .medalha-icon { font-size: 3rem; }
+        .podium-flag { width: 28px; height: 18px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container text-center">
     
-    <link rel="icon" type="image/png" href="{% static 'imgs/logo_copa_2026.png' %}">
-
-    <style>
-        body { 
-            background-color: #00122b; 
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        }
-        
-        .navbar-custom { background-color: #000000; border-bottom: 3px solid #0d6efd; }
-        .navbar-brand { font-weight: 800; letter-spacing: 0.5px; font-size: 1.1rem; }
-
-        .podium-card { border: none; border-radius: 15px; transition: transform 0.2s; box-shadow: 0 10px 25px rgba(0,0,0,0.4); }
-        .podium-card:hover { transform: translateY(-5px); }
-        
-        .card-ouro { background: linear-gradient(135deg, #ffd700 0%, #fdb931 100%); color: #000; }
-        .card-prata { background: linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%); color: #000; }
-        .card-bronze { background: linear-gradient(135deg, #cd7f32 0%, #a0522d 100%); color: #fff; }
-        .card-quarto { background: #fff; border: 2px dashed #ccc; color: #333; }
-        
-        .medalha-icon { font-size: 3.5rem; margin-bottom: 10px; display: block; filter: drop-shadow(0px 4px 4px rgba(0,0,0,0.2)); }
-        .time-nome { font-size: 1.8rem; font-weight: 900; margin: 10px 0; text-transform: uppercase; }
-        .pontos-badge { background-color: rgba(0,0,0,0.15); padding: 5px 15px; border-radius: 20px; font-weight: bold; }
-    </style>
-  </head>
-  <body>
-
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom py-3 shadow-sm mb-5">
-      <div class="container">
-        <a class="navbar-brand d-flex align-items-center" href="#">
-          <img src="{% static 'imgs/logo_copa_2026.png' %}" alt="Logo FIFA 2026" height="40" class="me-3">
-          COPA DO MUNDO DA FIFA 2026™
-        </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <div class="navbar-nav ms-4">
-                <a class="nav-link" href="{% url 'ranking' %}">Classificação</a>
-                <a class="nav-link" href="{% url 'palpites' %}">Jogos</a>
-                <a class="nav-link" href="{% url 'etapa_16avos' %}">Mata-Mata</a>
-                <a class="nav-link active fw-bold" href="{% url 'palpites_extras' %}">Apostas Bônus</a>
-                <a class="nav-link" href="{% url 'acompanhar_hub' %}">Acompanhar Palpites</a>
-            </div>
-            <span class="navbar-text text-white ms-auto d-flex align-items-center">
-                <span class="me-3 opacity-75">Olá, <strong>{{ user.username }}</strong></span>
-                <form action="{% url 'logout' %}" method="post" class="m-0 p-0">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-sm btn-outline-light rounded-pill px-3 fw-bold">Sair</button>
-                </form>
-            </span>
-        </div>
-      </div>
-    </nav>
-
-    <div class="container text-center mb-5">
-        <h2 class="fw-bold mb-3 text-white">🔮 Seu Pódio Virtual</h2>
-        <p class="text-light opacity-75 fs-5 mb-5">
-            Este é o resultado final da Copa de acordo com seus palpites.<br>
-            Se acertar essas posições, você ganha muitos pontos extras!
+    <div class="mb-5">
+        <h2 class="fw-bold mb-2">🔮 Seu Pódio Virtual</h2>
+        <p class="small mx-auto" style="max-width: 600px; font-size: 0.95rem; line-height: 1.5; color: #cbd5e1;">
+            Este é o resultado final da Copa do Mundo gerado automaticamente através dos seus palpites de mata-mata. Se acertar essas posições ao fim do torneio real, você garante uma chuva de pontos extras!
         </p>
-
-        {% if podium and podium.campeao %}
-            <div class="row justify-content-center align-items-end">
-                
-                <div class="col-md-4 mb-4 order-md-1">
-                    <div class="card podium-card card-prata py-4 mt-md-4"> 
-                        <div class="card-body">
-                            <span class="medalha-icon">🥈</span>
-                            <h6 class="text-uppercase mb-0 fw-bold opacity-75">Vice-Campeão</h6>
-                            <div class="time-nome">{{ podium.vice.nome }}</div>
-                            <span class="pontos-badge">Vale 450 Pts</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4 mb-4 order-md-2"> 
-                    <div class="card podium-card card-ouro py-5">
-                        <div class="card-body">
-                            <span class="medalha-icon" style="font-size: 4.5rem;">🥇</span>
-                            <h6 class="text-uppercase mb-0 fw-bold opacity-75">Grande Campeão</h6>
-                            <div class="time-nome fs-1">{{ podium.campeao.nome }}</div>
-                            <span class="pontos-badge">Vale 500 Pts</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4 mb-4 order-md-3">
-                    <div class="card podium-card card-bronze py-4 mt-md-5">
-                        <div class="card-body">
-                            <span class="medalha-icon">🥉</span>
-                            <h6 class="text-uppercase mb-0 fw-bold opacity-75">3º Lugar</h6>
-                            <div class="time-nome">{{ podium.terceiro.nome }}</div>
-                            <span class="pontos-badge">Vale 400 Pts</span>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
-            <div class="row justify-content-center mt-4">
-                <div class="col-md-6">
-                    <div class="card podium-card card-quarto py-3">
-                        <div class="card-body d-flex justify-content-between align-items-center px-4 px-md-5">
-                            <div class="text-start">
-                                <h6 class="mb-0 text-muted fw-bold text-uppercase">4º Colocado</h6>
-                                <div class="fw-black fs-3" style="font-weight: 900;">{{ podium.quarto.nome }}</div>
-                            </div>
-                            <span class="badge bg-secondary fs-6 rounded-pill px-3 py-2 shadow-sm">Vale 350 Pts</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        {% else %}
-            
-            <div class="alert alert-warning py-5 mx-auto shadow" style="max-width: 600px; border-radius: 15px;">
-                <h4 class="fw-bold">⚠️ Pódio Indefinido</h4>
-                <p class="mb-4 text-dark">
-                    O sistema ainda não conseguiu calcular seu campeão.<br>
-                    Você precisa preencher seus palpites na fase de <strong>Mata-Mata</strong> até o final.
-                </p>
-                <a href="{% url 'etapa_16avos' %}" class="btn btn-primary btn-lg fw-bold shadow-sm">Preencher Mata-Mata Agora</a>
-            </div>
-
-        {% endif %}
-
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  </body>
-</html>
+
+    {% if podium and podium.campeao %}
+        <div class="row justify-content-center align-items-end g-4">
+            
+            <div class="col-md-4 order-2 order-md-1">
+                <div class="card podium-card card-prata py-4 mt-md-4"> 
+                    <div class="card-body">
+                        <span class="medalha-icon">🥈</span>
+                        <h6 class="text-uppercase mb-0 fw-bold opacity-75 small">Vice-Campeão</h6>
+                        
+                        <div class="time-nome d-flex align-items-center justify-content-center gap-2">
+                            {% if podium.vice.imagem %}
+                                <img src="{{ podium.vice.imagem }}" class="podium-flag" alt="Bandeira">
+                            {% endif %}
+                            <span>{{ podium.vice.nome }}</span>
+                        </div>
+                        
+                        <span class="pontos-badge">Vale 450 Pts</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 order-1 order-md-2"> 
+                <div class="card podium-card card-ouro py-5">
+                    <div class="card-body">
+                        <span class="medalha-icon" style="font-size: 4.8rem;">🥇</span>
+                        <h6 class="text-uppercase mb-0 fw-bold opacity-75 small">Grande Campeão</h6>
+                        
+                        <div class="time-nome fs-1 d-flex align-items-center justify-content-center gap-2">
+                            {% if podium.campeao.imagem %}
+                                <img src="{{ podium.campeao.imagem }}" class="podium-flag" style="width: 36px; height: 24px;" alt="Bandeira">
+                            {% endif %}
+                            <span>{{ podium.campeao.nome }}</span>
+                        </div>
+                        
+                        <span class="pontos-badge">Vale 500 Pts</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 order-3 order-md-3">
+                <div class="card podium-card card-bronze py-4 mt-md-5">
+                    <div class="card-body">
+                        <span class="medalha-icon">🥉</span>
+                        <h6 class="text-uppercase mb-0 fw-bold opacity-75 small">3º Lugar</h6>
+                        
+                        <div class="time-nome d-flex align-items-center justify-content-center gap-2">
+                            {% if podium.terceiro.imagem %}
+                                <img src="{{ podium.terceiro.imagem }}" class="podium-flag" alt="Bandeira">
+                            {% endif %}
+                            <span>{{ podium.terceiro.nome }}</span>
+                        </div>
+                        
+                        <span class="pontos-badge">Vale 400 Pts</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="row justify-content-center mt-4 g-4">
+            <div class="col-md-8 col-lg-6">
+                <div class="card podium-card card-quarto py-3">
+                    <div class="card-body d-flex justify-content-between align-items-center px-4 px-md-5">
+                        <div class="text-start">
+                            <h6 class="mb-1 card-quarto-label">4º Colocado</h6>
+                            
+                            <div class="fw-black fs-3 d-flex align-items-center gap-2" style="font-weight: 900; color: #fff;">
+                                {% if podium.quarto.imagem %}
+                                    <img src="{{ podium.quarto.imagem }}" class="podium-flag" alt="Bandeira">
+                                {% endif %}
+                                <span>{{ podium.quarto.nome }}</span>
+                            </div>
+                        </div>
+                        <span class="badge bg-secondary fs-6 rounded-pill px-3 py-2 shadow-sm fw-bold">Vale 350 Pts</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    {% else %}
+        <div class="card alert-podium-empty p-5 mx-auto text-center shadow" style="max-width: 600px;">
+            <div class="card-body">
+                <span class="d-block mb-3" style="font-size: 3rem;">⚠️</span>
+                <h4 class="fw-bold text-white mb-2">Pódio Indefinido</h4>
+                <p class="text-muted small mb-4 mx-auto" style="max-width: 450px; line-height: 1.5;">
+                    Ainda não conseguimos calcular o seu campeão porque existem lacunas no seu chaveamento. Você precisa avançar e salvar todas as etapas do <strong>Mata-Mata</strong> até o fim da Grande Final para desbloquear o seu pódio.
+                </p>
+                <a href="{% url 'etapa_16avos' %}" class="btn btn-primary fw-bold px-4 py-2 rounded-pill shadow">
+                    Preencher Mata-Mata Agora
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
