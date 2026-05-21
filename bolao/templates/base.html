@@ -243,6 +243,9 @@
         <a href="{% url 'palpites_extras' %}" class="{% if request.resolver_match.url_name == 'palpites_extras' %}active{% endif %}">
           <span>🏅</span>Pódio
         </a>
+        <a href="{% url 'acompanhar_hub' %}" class="{% if request.resolver_match.url_name == 'acompanhar_hub' or request.resolver_match.url_name == 'acompanhar_detalhe' %}active{% endif %}">
+          <span class="d-block fs-4">👥</span>Espiar
+        </a>
       </nav>
 
     </div>
