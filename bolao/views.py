@@ -18,12 +18,12 @@ from django.contrib import messages  # Importante para exibir os erros na tela
 # --- RANKING ATUALIZADO --- #
 @login_required # Adicionando Login obrigatorio #
 def ranking(request):
-    usuarios = User.objects.all()
+    # AJUSTE 1: Filtrar para ignorar o Admin (traz apenas quem is_superuser=False)
+    usuarios = User.objects.filter(is_superuser=False)
     dados_ranking = []
 
     for usuario in usuarios:
         # 1. Soma pontos de TODAS as partidas (Grupos + Mata-Mata)
-        # Note que agora usamos o campo 'pontos' (não mais pontos_ganhos) conforme seu novo model
         soma_partidas = Palpite.objects.filter(usuario=usuario).aggregate(
             total=Sum('pontos'))['total'] or 0
         
@@ -48,7 +48,12 @@ def ranking(request):
             }
         })
     
-    # Ordena do maior para o menor
+    # AJUSTE 2: Aplicar desempate por Ordem Alfabética (A-Z)
+    # No Python, como a ordenação é estável, nós ordenamos primeiro pelo critério secundário...
+    dados_ranking.sort(key=lambda x: x['username'])
+    
+    # ...e depois ordenamos pelo critério principal (maior ponto pro menor).
+    # Se houver empate de pontos, o Python mantém a ordem alfabética que foi definida acima!
     dados_ranking.sort(key=lambda x: x['total_pontos'], reverse=True)
 
     return render(request, 'ranking.html', {'usuarios': dados_ranking})
@@ -160,7 +165,7 @@ def meus_palpites(request):
         return redirect('etapa_16avos')
 
     else:
-        partidas = Partida.objects.filter(fase='GRUPOS').order_by('data_jogo')
+        partidas = Partida.objects.filter(fase='GRUPOS').order_by('time_casa__grupo', 'data_jogo') # ajuste para agrupar por grupo
         lista_jogos = []
         for p in partidas:
             palpite = Palpite.objects.filter(usuario=request.user, partida=p).first()
