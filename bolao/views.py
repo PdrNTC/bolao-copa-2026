@@ -14,6 +14,10 @@ from .utils import resolver_partida_mata_mata, simular_caminho_usuario
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from django.contrib import messages  # Importante para exibir os erros na tela
+import datetime
+
+# Define o prazo limite: 11 de Junho de 2026 às 00:00:00 #
+PRAZO_LIMITE = timezone.make_aware(datetime.datetime(2026, 6, 11, 0, 0, 0))
 
 # --- RANKING ATUALIZADO --- #
 @login_required # Adicionando Login obrigatorio #
@@ -63,6 +67,9 @@ def ranking(request):
 @login_required
 def palpites_matamata(request):
 
+    # PASSO PARA TRAVA DA DATA LIMITE:
+    prazo_encerrado = timezone.now() >= PRAZO_LIMITE
+
     # TRAVA ADICIONADA: Impede acesso se não terminou os 72 jogos de grupos
     total_grupos = Partida.objects.filter(fase='GRUPOS').count()
     meus_palpites_grupos = Palpite.objects.filter(usuario=request.user, partida__fase='GRUPOS').count()
@@ -75,6 +82,11 @@ def palpites_matamata(request):
     fases_finais = ['16AVOS', 'OITAVAS', 'QUARTAS', 'SEMI', '3LUGAR', 'FINAL']
     
     if request.method == 'POST':
+        # 🔒 BARREIRA DE DATA: Bloqueia salvamento via POST se o prazo acabou
+        if prazo_encerrado:
+            messages.error(request, "⚠️ O prazo para enviar ou alterar palpites encerrou em 10/06/2026!")
+            return redirect('palpites_matamata')
+        
         partidas = Partida.objects.filter(fase__in=fases_finais)
         for partida in partidas:
             placar_casa = request.POST.get(f'gols_casa_{partida.id}')
@@ -138,17 +150,25 @@ def palpites_matamata(request):
                 'vencedor_confronto_id': palpite.vencedor_confronto_id if palpite else None
             })
 
-        return render(request, 'palpites_matamata.html', {'lista_jogos': lista_jogos})
+        return render(request, 'palpites_matamata.html', {'lista_jogos': lista_jogos, 'prazo_encerrado': prazo_encerrado})
 
 
 # --- OUTRAS VIEWS (Mantidas iguais ou levemente ajustadas) ---
 
 @login_required
 def meus_palpites(request):
+    # PASSO PARA TRAVA DA DATA LIMITE:
+    prazo_encerrado = timezone.now() >= PRAZO_LIMITE
+
     # Verifica se já palpitou GRUPOS
     ja_palpitou = Palpite.objects.filter(usuario=request.user, partida__fase='GRUPOS').exists()
 
     if request.method == 'POST':
+        # 🔒 BARREIRA DE DATA: Bloqueia alterações se o prazo acabou
+        if prazo_encerrado:
+            messages.error(request, "⚠️ O prazo para enviar ou alterar palpites encerrou em 10/06/2026!")
+            return redirect('palpites')
+        
         if ja_palpitou: return redirect('etapa_16avos') # Se já foi, avança
 
         partidas = Partida.objects.filter(fase='GRUPOS')
@@ -175,14 +195,21 @@ def meus_palpites(request):
                 'palpite_vis': palpite.palpite_visitante if palpite else ''
             })
         
-        # Se já palpitou, mostra botão "Ir para Próxima Fase" no HTML
-        return render(request, 'palpites.html', {'lista_jogos': lista_jogos, 'ja_palpitou': ja_palpitou})
+        # 🟢 ENVIADO PARA O TEMPLATE: 'prazo_encerrado' adicionado no dicionário do render
+        return render(request, 'palpites.html', {
+            'lista_jogos': lista_jogos, 
+            'ja_palpitou': ja_palpitou, 
+            'prazo_encerrado': prazo_encerrado
+        })
     
 
 def gerenciar_etapa(request, fases_da_etapa, titulo_etapa, proxima_url, progresso_val):
     """
     Controla qualquer etapa do mata-mata: verifica bloqueio, salva, simula e redireciona.
     """
+
+    # PASSO PARA TRAVA DA DATA LIMITE:
+    prazo_encerrado = timezone.now() >= PRAZO_LIMITE
 
     # TRAVA ADICIONADA: Se tentar burlar digitando a URL de qualquer fase, o sistema barra aqui
     total_grupos = Partida.objects.filter(fase='GRUPOS').count()
@@ -200,6 +227,11 @@ def gerenciar_etapa(request, fases_da_etapa, titulo_etapa, proxima_url, progress
     ).exists()
 
     if request.method == 'POST':
+        # 🔒 BARREIRA DE DATA: Bloqueia submissões de subfases se o prazo acabou
+        if prazo_encerrado:
+            messages.error(request, "⚠️ O prazo para enviar ou alterar palpites encerrou em 10/06/2026!")
+            return redirect(request.path)
+        
         if ja_preencheu_etapa:
             return redirect(proxima_url)
 
@@ -272,11 +304,20 @@ def gerenciar_etapa(request, fases_da_etapa, titulo_etapa, proxima_url, progress
             'titulo': titulo_etapa,
             'ja_preencheu': ja_preencheu_etapa,
             'proxima_url': proxima_url,
-            'progresso': progresso_val
+            'progresso': progresso_val,
+            'prazo_encerrado': prazo_encerrado
         })
 
 def cadastro(request):
+    # TRAVA DE DATA LIMITE #
+    prazo_encerrado = timezone.now() >= PRAZO_LIMITE
+
     if request.method == 'POST':
+        # 🔒 BARREIRA DE DATA: Impede novos cadastros após o dia 10/06
+        if prazo_encerrado:
+            messages.error(request, "⚠️ As inscrições para o bolão foram encerradas em 10/06/2026!")
+            return render(request, 'registration/cadastro.html', {'prazo_encerrado': prazo_encerrado})
+        
         # 1. Captura os dados exatamente como estão no 'name' dos inputs do HTML
         usuario_txt = request.POST.get('username')
         email_txt = request.POST.get('email')
