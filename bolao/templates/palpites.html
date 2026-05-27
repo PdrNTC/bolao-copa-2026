@@ -71,6 +71,13 @@
         border: 2px solid #dee2e6;
         background: #f8f9fa;
     }
+    /* Estilo visual opcional para dar mais ênfase aos campos desativados por prazo */
+    .score-input:disabled {
+        background: #e9ecef;
+        color: #6c757d;
+        cursor: not-allowed;
+        border-color: #ced4da;
+    }
     .versus { font-weight: 800; color: #adb5bd; }
     @media (max-width: 576px) {
         .team-name { font-size: 0.85rem; }
@@ -80,7 +87,7 @@
 {% endblock %}
 
 {% block header_actions %}
-    {% if not ja_palpitou %}
+    {% if not ja_palpitou and not prazo_encerrado %}
         <button type="submit" form="form-palpites" class="save-btn">Salvar</button>
     {% endif %}
 {% endblock %}
@@ -104,7 +111,16 @@
                 {% endfor %}
             {% endif %}
 
-            {% if ja_palpitou %}
+            {% if prazo_encerrado %}
+                <div class="alert alert-danger shadow border-0 text-start text-dark" role="alert" style="background-color: #f8d7da; color: #842029; border-left: 6px solid #dc3545 !important; border-radius: 12px;">
+                    <div class="d-flex align-items-center">
+                        <span class="me-3" style="font-size: 1.6rem;">🔒</span>
+                        <div>
+                            <strong>Mercado Fechado!</strong> O prazo limite para salvar ou modificar palpites foi encerrado em 10/06/2026. Seus palpites atuais estão congelados para auditoria.
+                        </div>
+                    </div>
+                </div>
+            {% elif ja_palpitou %}
                 <div class="alert alert-success shadow-sm text-dark">
                     ✅ <strong>Palpites Salvos!</strong> O sistema já gerou seu Mata-Mata.
                     <br><a href="{% url 'etapa_16avos' %}" class="btn btn-sm btn-success mt-2 fw-bold px-4">IR PARA MATA-MATA ➡️</a>
@@ -140,9 +156,9 @@
                                 {% endif %}
                             </div>
 
-                            <input type="number" class="score-input" name="gols_casa_{{ item.partida.id }}" value="{{ item.palpite_casa }}" min="0" required {% if ja_palpitou %}disabled{% endif %}>
+                            <input type="number" class="score-input" name="gols_casa_{{ item.partida.id }}" value="{{ item.palpite_casa }}" min="0" required {% if ja_palpitou or prazo_encerrado %}disabled{% endif %}>
                             <div class="versus">x</div>
-                            <input type="number" class="score-input" name="gols_vis_{{ item.partida.id }}" value="{{ item.palpite_vis }}" min="0" required {% if ja_palpitou %}disabled{% endif %}>
+                            <input type="number" class="score-input" name="gols_vis_{{ item.partida.id }}" value="{{ item.palpite_vis }}" min="0" required {% if ja_palpitou or prazo_encerrado %}disabled{% endif %}>
 
                             <div class="team vis">
                                 {% if item.partida.time_visitante.imagem %}

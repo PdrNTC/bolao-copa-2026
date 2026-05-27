@@ -24,7 +24,7 @@
         background-color: rgba(255,255,255,0.1);
         border-radius: 10px;
         overflow: hidden;
-        width: 100%; /* ✅ Agora ela se adapta ao tamanho da tela */
+        width: 100%;
         margin-bottom: 4px;
     }
     .progress-fill {
@@ -71,7 +71,7 @@
         text-transform: uppercase;
     }
     .match-meta .stage {
-        color: #dc3545; /* Destaque vermelho para o mata-mata */
+        color: #dc3545;
     }
 
     .match-main {
@@ -136,6 +136,7 @@
     .score-input:disabled {
         background-color: #e9ecef;
         color: #6c757d;
+        cursor: not-allowed;
     }
     .versus {
         font-weight: 800;
@@ -165,6 +166,10 @@
         color: #fff !important;
         box-shadow: 0 4px 8px rgba(13, 110, 253, 0.3);
     }
+    .btn-check:disabled + .btn-outline-penalty {
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
 
     /* Responsividade para telas menores */
     @media (max-width: 576px) {
@@ -176,7 +181,7 @@
 {% endblock %}
 
 {% block header_actions %}
-    {% if not ja_preencheu %}
+    {% if not ja_preencheu and not prazo_encerrado %}
         <button type="submit" form="form-matamata" class="save-btn">Salvar</button>
     {% endif %}
 {% endblock %}
@@ -200,7 +205,16 @@
                 </div>
             </div>
 
-            {% if ja_preencheu %}
+            {% if prazo_encerrado %}
+                <div class="alert alert-danger shadow border-0 text-start text-dark mx-auto mb-4" role="alert" style="max-width: 600px; background-color: #f8d7da; color: #842029; border-left: 6px solid #dc3545 !important; border-radius: 12px;">
+                    <div class="d-flex align-items-center">
+                        <span class="me-3" style="font-size: 1.6rem;">🔒</span>
+                        <div>
+                            <strong>Mercado Fechado!</strong> O prazo limite para salvar ou modificar palpites foi encerrado em 10/06/2026. Seus palpites para o Mata-Mata estão congelados.
+                        </div>
+                    </div>
+                </div>
+            {% elif ja_preencheu %}
                 <div class="card border-0 mb-4 shadow-sm mx-auto" style="max-width: 600px; background-color: #d1e7dd; color: #0f5132; border-radius: 14px;">
                     <div class="card-body text-center p-4">
                         <h5 class="card-title fw-bold mb-2">🎉 Etapa Concluída!</h5>
@@ -237,18 +251,18 @@
 
                     <div class="d-flex flex-column align-items-center">
                         <div class="score-container">
-                            <input type="number" class="score-input" name="gols_casa_{{ jogo.partida.id }}" value="{{ jogo.palpite_casa }}" min="0" required placeholder="-" {% if ja_preencheu %}disabled{% endif %}>
+                            <input type="number" class="score-input" name="gols_casa_{{ jogo.partida.id }}" value="{{ jogo.palpite_casa }}" min="0" required placeholder="-" {% if ja_preencheu or prazo_encerrado %}disabled{% endif %}>
                             <span class="versus">✕</span>
-                            <input type="number" class="score-input" name="gols_vis_{{ jogo.partida.id }}" value="{{ jogo.palpite_vis }}" min="0" required placeholder="-" {% if ja_preencheu %}disabled{% endif %}>
+                            <input type="number" class="score-input" name="gols_vis_{{ jogo.partida.id }}" value="{{ jogo.palpite_vis }}" min="0" required placeholder="-" {% if ja_preencheu or prazo_encerrado %}disabled{% endif %}>
                         </div>
 
                         <div class="mt-3 text-center selecao-vencedor" style="display: none;">
                             <small class="text-muted d-block mb-2 fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">QUEM PASSA NOS PÊNALTIS?</small>
                             <div class="btn-group gap-2" role="group">
-                                <input type="radio" class="btn-check" name="vencedor_{{ jogo.partida.id }}" id="venc_c_{{ jogo.partida.id }}" value="{{ jogo.id_casa_puro }}" {% if jogo.vencedor_confronto_id == jogo.id_casa_puro %}checked{% endif %} {% if ja_preencheu %}disabled{% endif %}>
+                                <input type="radio" class="btn-check" name="vencedor_{{ jogo.partida.id }}" id="venc_c_{{ jogo.partida.id }}" value="{{ jogo.id_casa_puro }}" {% if jogo.vencedor_confronto_id == jogo.id_casa_puro %}checked{% endif %} {% if ja_preencheu or prazo_encerrado %}disabled{% endif %}>
                                 <label class="btn btn-outline-penalty" for="venc_c_{{ jogo.partida.id }}">{{ jogo.time_casa_visual.nome }}</label>
 
-                                <input type="radio" class="btn-check" name="vencedor_{{ jogo.partida.id }}" id="venc_v_{{ jogo.partida.id }}" value="{{ jogo.id_vis_puro }}" {% if jogo.vencedor_confronto_id == jogo.id_vis_puro %}checked{% endif %} {% if ja_preencheu %}disabled{% endif %}>
+                                <input type="radio" class="btn-check" name="vencedor_{{ jogo.partida.id }}" id="venc_v_{{ jogo.partida.id }}" value="{{ jogo.id_vis_puro }}" {% if jogo.vencedor_confronto_id == jogo.id_vis_puro %}checked{% endif %} {% if ja_preencheu or prazo_encerrado %}disabled{% endif %}>
                                 <label class="btn btn-outline-penalty" for="venc_v_{{ jogo.partida.id }}">{{ jogo.time_vis_visual.nome }}</label>
                             </div>
                         </div>
@@ -269,7 +283,7 @@
                 <div class="alert alert-warning text-center border-0 shadow-sm" style="border-radius: 12px;">Nenhum confronto disponível para esta etapa.</div>
             {% endfor %}
 
-            {% if not ja_preencheu %}
+            {% if not ja_preencheu and not prazo_encerrado %}
             <div class="text-center mt-4 mb-5">
                 <button type="submit" class="btn btn-primary btn-lg px-5 shadow fw-bold py-3" style="background: linear-gradient(135deg, #0d6efd, #004da8); border: none; border-radius: 30px; font-size: 1rem;">
                     💾 SALVAR E CALCULAR CONFRONTOS
@@ -301,7 +315,6 @@
                     
                     if (valCasa !== '' && valVis !== '' && valCasa === valVis) {
                         radioContainer.style.display = 'block';
-                        // Só torna obrigatório se o formulário não estiver desabilitado (modo visualização)
                         if(!inputCasa.disabled) {
                             radios.forEach(r => r.required = true);
                         }
@@ -309,7 +322,6 @@
                         radioContainer.style.display = 'none';
                         radios.forEach(r => {
                             r.required = false;
-                            // Só limpa a seleção se os campos estiverem ativos para edição
                             if(!inputCasa.disabled) {
                                 r.checked = false;
                             }
