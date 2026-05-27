@@ -141,46 +141,58 @@
         <span class="btn-tab active">Criar conta</span>
       </nav>
 
-      <div class="mb-4">
-        <h1 class="auth-title mb-1">Novo jogador</h1>
-        <p class="auth-subtitle mb-0">Crie sua conta para acessar a plataforma e começar a jogar.</p>
-      </div>
-      
-      <form method="post">
-          {% csrf_token %}
-          
-          {% if messages %}
-              {% for message in messages %}
-                  <div class="alert alert-danger p-3 mb-3 border-0 small fw-bold" style="border-radius: 10px; background-color: #f8d7da; color: #842029;">
-                      <strong>Ops!</strong> {{ message }}
-                  </div>
-              {% endfor %}
-          {% endif %}
+      {% if messages %}
+          {% for message in messages %}
+              <div class="alert alert-danger p-3 mb-3 border-0 small fw-bold" style="border-radius: 10px; background-color: #f8d7da; color: #842029;">
+                  <strong>Ops!</strong> {{ message }}
+              </div>
+          {% endfor %}
+      {% endif %}
 
-          <div class="mb-2">
-              <label class="form-label">Nome de usuário</label>
-              <input type="text" name="username" class="form-control" placeholder="Ex: silva26" required autocomplete="username">
+      {% if prazo_encerrado %}
+          <div class="text-center py-3">
+              <span style="font-size: 3rem; display: block; margin-bottom: 15px;">🔒</span>
+              <h1 class="auth-title mb-2">Inscrições Encerradas</h1>
+              <p class="auth-subtitle mb-4">O prazo limite para novas inscrições no bolão encerrou em 10/06/2026. Faça login com uma conta existente para acompanhar as notas e o ranking.</p>
+              
+              <a href="{% url 'login' %}" class="btn btn-submit w-100 text-decoration-none d-block">
+                  Voltar para o Login
+              </a>
           </div>
-
-          <div class="mb-2">
-              <label class="form-label">E-mail</label>
-              <input type="email" name="email" class="form-control" placeholder="voce@email.com" required autocomplete="email">
-          </div>
-          
-          <div class="mb-2">
-              <label class="form-label">Senha</label>
-              <input type="password" name="password" class="form-control" placeholder="Mínimo 8 caracteres" required autocomplete="new-password">
-          </div>
-          
+      {% else %}
           <div class="mb-4">
-              <label class="form-label">Confirmar senha</label>
-              <input type="password" name="confirm_password" class="form-control" placeholder="Repita a senha" required autocomplete="new-password">
+            <h1 class="auth-title mb-1">Novo jogador</h1>
+            <p class="auth-subtitle mb-0">Crie sua conta para acessar a plataforma e começar a jogar.</p>
           </div>
           
-          <button type="submit" class="btn btn-submit w-100 shadow-sm">
-              Criar conta e entrar
-          </button>
-      </form>
+          <form method="post">
+              {% csrf_token %}
+
+              <div class="mb-2">
+                  <label class="form-label">Nome de usuário</label>
+                  <input type="text" name="username" class="form-control" placeholder="Ex: silva26" required autocomplete="username">
+              </div>
+
+              <div class="mb-2">
+                  <label class="form-label">E-mail</label>
+                  <input type="email" name="email" class="form-control" placeholder="voce@email.com" required autocomplete="email">
+              </div>
+              
+              <div class="mb-2">
+                  <label class="form-label">Senha</label>
+                  <input type="password" name="password" class="form-control" placeholder="Mínimo 8 caracteres" required autocomplete="new-password">
+              </div>
+              
+              <div class="mb-4">
+                  <label class="form-label">Confirmar senha</label>
+                  <input type="password" name="confirm_password" class="form-control" placeholder="Repita a senha" required autocomplete="new-password">
+              </div>
+              
+              <button type="submit" class="btn btn-submit w-100 shadow-sm">
+                  Criar conta e entrar
+              </button>
+          </form>
+      {% endif %}
       
     </main>
 
