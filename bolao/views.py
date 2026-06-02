@@ -399,9 +399,13 @@ def etapa_final(request):
 
 @login_required
 def acompanhar_hub(request):
-    """ Exibe a lista de usuários que já finalizaram os palpites (possuem Pódio) """
-    # Pega todos os usuários que têm um registro na tabela PalpitePodium
-    usuarios_concluidos = User.objects.filter(palpitepodium__isnull=False).distinct()
+    """ Exibe a lista de usuários que já finalizaram os palpites (chegaram e salvaram a FINAL) """
+    
+    # Só traz quem não é admin E já salvou palpite na fase FINAL
+    usuarios_concluidos = User.objects.filter(
+        is_superuser=False,
+        palpite__partida__fase='FINAL'
+    ).distinct()
     
     return render(request, 'acompanhar_hub.html', {'usuarios_concluidos': usuarios_concluidos})
 
