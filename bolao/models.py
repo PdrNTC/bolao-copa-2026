@@ -60,6 +60,11 @@ class Partida(models.Model):
         if skip_calc:
             return
         
+        # TRAVA DE SEGURANÇA PARA A PRODUÇÃO:
+        # Se a partida real não tiver resultado preenchido, encerra aqui e poupa o processador do servidor!
+        if self.gols_casa is None or self.gols_visitante is None:
+            return
+        
         # 2. Puxa todos os palpites que os usuários fizeram PARA ESTE JOGO
         palpites = self.palpite_set.all() 
         for palpite in palpites:
