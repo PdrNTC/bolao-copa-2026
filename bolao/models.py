@@ -177,7 +177,9 @@ class PalpitePodium(models.Model):
                 self.pontos_fase_grupos + self.pontos_confrontos)
 
     def __str__(self):
-        return f"Pódio de {self.usuario.username}: 1. {self.campeao} | 2. {self.vice}"
+        # Se o usuário existir, pega o username. Se estiver vazio (None), chama de "Resultado Oficial"
+        username = self.usuario.username if self.usuario else "Resultado Oficial (Real)"
+        return f"Pódio de {username}: 1. {self.campeao} | 2. {self.vice}"
     
 
 # 5. Tabelas para Perguntas Extras Manuais (Opcional, mas sua view usa)
